@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// ASTSPARES Firestore security rules.
+// Catalog is world-readable (it's the public, SEO-indexed product data).
+// RFQs can be CREATED by anyone (the public quote form) but only READ/UPDATED
+// by admins. Admin = an existing /admins/{uid} document.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Public catalog — read by anyone, written only by admins.
+    match /products/{partNumber} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Category tree — public read, admin write.
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Inventory — admins only (exposed to the catalog via the denormalised
+    // inStock flag on the product, not read directly by the public).
+    match /inventory/{partNumber} {
+      allow read, write: if isAdmin();
+    }
+
+    // RFQs — public create with validation; read/update admins only.
+    match /rfqs/{rfqNo} {
+      allow create: if isValidNewRfq();
+      allow read, update, delete: if isAdmin();
+
+      function isValidNewRfq() {
+        let d = request.resource.data;
+        return d.status == 'Pending'
+          && d.contact.email is string
+          && d.contact.email.matches('^[^@]+@[^@]+\\.[^@]+$')
+          && d.contact.name is string && d.contact.name.size() > 0
+          && d.contact.company is string && d.contact.company.size() > 0
+          && d.items is list && d.items.size() > 0 && d.items.size() <= 200;
+      }
+    }
+
+    // Admin registry — readable by signed-in users (to self-check), never
+    // writable from the client. Grant admin via console or a trusted script.
+    match /admins/{uid} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}

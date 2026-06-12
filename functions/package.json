@@ -1,0 +1,19 @@
+{
+  "name": "astspares-functions",
+  "description": "RFQ notification + customer confirmation emails for ASTSPARES.",
+  "engines": { "node": "20" },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.2.0",
+    "firebase-functions": "^5.0.1",
+    "resend": "^3.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3"
+  },
+  "private": true
+}

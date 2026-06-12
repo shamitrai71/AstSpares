@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-petroleum-ink font-sans antialiased;
+    background-image:
+      /* faint engineering-paper grid, well below the noise floor */
+      linear-gradient(to right, rgba(14, 28, 36, 0.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(14, 28, 36, 0.025) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  h1, h2, h3 {
+    @apply font-display font-normal tracking-tight text-petroleum;
+  }
+
+  ::selection {
+    @apply bg-safety text-paper;
+  }
+
+  /* Quality floor: visible keyboard focus everywhere. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-safety ring-offset-2 ring-offset-paper;
+  }
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-shell px-5 sm:px-8;
+  }
+
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-eyebrow text-petroleum-300;
+  }
+
+  /* ── Signature: the part-number plate ───────────────────────────────── */
+  .part-plate {
+    @apply inline-flex items-center gap-2 rounded-tag border border-petroleum/15
+           bg-paper-200 px-2.5 py-1 font-mono text-[13px] tracking-tight text-petroleum;
+  }
+  .part-plate::before {
+    content: '';
+    @apply h-3 w-1 rounded-[1px] bg-safety;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-tag px-4 py-2.5
+           font-sans text-sm font-medium transition-colors disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-safety text-paper hover:bg-safety-600;
+  }
+  .btn-dark {
+    @apply btn bg-petroleum text-paper hover:bg-petroleum-700;
+  }
+  .btn-ghost {
+    @apply btn border border-petroleum/20 text-petroleum hover:bg-paper-200;
+  }
+
+  .panel {
+    @apply rounded-panel border border-paper-line bg-white/60 backdrop-blur-[1px];
+  }
+
+  .stock-dot {
+    @apply inline-block h-2 w-2 rounded-full;
+  }
+
+  .field {
+    @apply w-full rounded-tag border border-paper-line bg-white px-3 py-2 text-sm
+           text-petroleum-ink placeholder:text-petroleum-300
+           focus:border-safety focus:outline-none;
+  }
+  .field-label {
+    @apply mb-1 block font-mono text-[11px] uppercase tracking-eyebrow text-petroleum-300;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,464 @@
+[
+  {
+    "partNumber": "AST-RS-1001",
+    "slug": "external-floating-roof-primary-rim-seal-ast-rs-1001",
+    "productName": "Primary Rim Seal \u2014 Mechanical Shoe",
+    "family": "RS",
+    "manufacturer": "ASTSPARES",
+    "description": "Mechanical-shoe primary seal for external floating-roof tanks. Stainless shoe plates ride against the shell on a spring-pantograph assembly, maintaining contact through shell out-of-roundness and roof tilt. Designed for low standing-storage and withdrawal loss.",
+    "features": [
+      "316L stainless shoe plates with replaceable wear strip",
+      "Spring-pantograph assembly accommodates \u00b1150 mm rim space variation",
+      "Fabric primary seal compliant with API 650 Appendix H",
+      "Field-replaceable in segments without de-roofing"
+    ],
+    "specs": [
+      {
+        "label": "Seal type",
+        "value": "Mechanical shoe, primary"
+      },
+      {
+        "label": "Shoe material",
+        "value": "SS316L"
+      },
+      {
+        "label": "Rim space range",
+        "value": "200\u2013350 mm"
+      },
+      {
+        "label": "Service temp",
+        "value": "-20 to +90 \u00b0C"
+      },
+      {
+        "label": "Standard",
+        "value": "API 650 App. H"
+      }
+    ],
+    "compatibleEquipment": [
+      "External floating roof",
+      "Pontoon roof",
+      "Double-deck roof"
+    ],
+    "leadTimeWeeks": 6,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": true,
+    "categoryId": "rim-seals--primary--mechanical-shoe"
+  },
+  {
+    "partNumber": "AST-RS-1002",
+    "slug": "secondary-rim-seal-wiper-ast-rs-1002",
+    "productName": "Secondary Rim Seal \u2014 Wiper Type",
+    "family": "RS",
+    "manufacturer": "ASTSPARES",
+    "description": "Wiper-style secondary seal mounted above the primary to further reduce evaporative loss and wind effects. Compression-mounted blade with UV-stable elastomer tip suited to outdoor crude and product service.",
+    "features": [
+      "Continuous fluoroelastomer wiper tip",
+      "Galvanised support with stainless fasteners",
+      "Bolt-on retrofit to existing rim plate",
+      "Reduces total loss when paired with AST-RS-1001"
+    ],
+    "specs": [
+      {
+        "label": "Seal type",
+        "value": "Secondary, wiper"
+      },
+      {
+        "label": "Tip material",
+        "value": "FKM (Viton-class)"
+      },
+      {
+        "label": "Rim space range",
+        "value": "200\u2013400 mm"
+      },
+      {
+        "label": "Service temp",
+        "value": "-25 to +120 \u00b0C"
+      },
+      {
+        "label": "Standard",
+        "value": "API 650 App. H"
+      }
+    ],
+    "compatibleEquipment": [
+      "External floating roof",
+      "Internal floating roof"
+    ],
+    "leadTimeWeeks": 5,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": true,
+    "categoryId": "rim-seals--secondary"
+  },
+  {
+    "partNumber": "AST-RS-1005",
+    "slug": "internal-floating-roof-tube-seal-ast-rs-1005",
+    "productName": "Internal Floating Roof Tube Seal",
+    "family": "RS",
+    "manufacturer": "ASTSPARES",
+    "description": "Liquid-mounted foam-filled tube seal for aluminium internal floating roofs. Conforms to shell irregularities and resists hydrocarbon absorption for long service life in fixed-roof tanks.",
+    "features": [
+      "Closed-cell foam core, hydrocarbon-resistant envelope",
+      "Liquid-mounted for low vapour space",
+      "Continuous envelope, no seams at contact face",
+      "Suitable for retrofit on aluminium IFRs"
+    ],
+    "specs": [
+      {
+        "label": "Seal type",
+        "value": "Liquid-mounted tube"
+      },
+      {
+        "label": "Envelope",
+        "value": "Nylon-reinforced FKM"
+      },
+      {
+        "label": "Rim space range",
+        "value": "100\u2013250 mm"
+      },
+      {
+        "label": "Service temp",
+        "value": "-20 to +85 \u00b0C"
+      },
+      {
+        "label": "Standard",
+        "value": "API 650 App. H"
+      }
+    ],
+    "compatibleEquipment": [
+      "Internal floating roof",
+      "Aluminium dome roof tanks"
+    ],
+    "leadTimeWeeks": 7,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": false,
+    "categoryId": "rim-seals--primary"
+  },
+  {
+    "partNumber": "AST-FA-2010",
+    "slug": "end-of-line-deflagration-flame-arrestor-4in-ast-fa-2010",
+    "productName": "End-of-Line Deflagration Flame Arrestor 4\"",
+    "family": "FA",
+    "manufacturer": "ASTSPARES",
+    "description": "End-of-line deflagration flame arrestor for atmospheric storage-tank vents. Crimped-ribbon stainless element quenches flame propagation while passing breathing flow with low pressure drop.",
+    "features": [
+      "Crimped-ribbon SS316 element, removable for cleaning",
+      "Weatherhood with bird/insect screen",
+      "Tested to EN ISO 16852 for IIA / IIB3 groups",
+      "Drain plug and inspection access"
+    ],
+    "specs": [
+      {
+        "label": "Connection",
+        "value": "4 in / DN100 flanged"
+      },
+      {
+        "label": "Housing",
+        "value": "SS316 / carbon steel option"
+      },
+      {
+        "label": "Element",
+        "value": "Crimped ribbon SS316"
+      },
+      {
+        "label": "Gas group",
+        "value": "IIA / IIB3"
+      },
+      {
+        "label": "Standard",
+        "value": "EN ISO 16852"
+      }
+    ],
+    "compatibleEquipment": [
+      "Atmospheric storage tank vent",
+      "PV valve inlet"
+    ],
+    "leadTimeWeeks": 8,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": true,
+    "categoryId": "flame-arrestors--end-of-line"
+  },
+  {
+    "partNumber": "AST-FA-2015",
+    "slug": "inline-detonation-flame-arrestor-6in-ast-fa-2015",
+    "productName": "In-Line Detonation Flame Arrestor 6\"",
+    "family": "FA",
+    "manufacturer": "ASTSPARES",
+    "description": "Bi-directional in-line detonation arrestor for vapour-recovery and manifold piping. Stable-detonation rated, with temperature sensor bosses for burn-monitoring.",
+    "features": [
+      "Bi-directional, stable & unstable detonation tested",
+      "Temperature sensor ports for end-of-burn detection",
+      "Quick-release clamp for element servicing",
+      "PTFE-lined option for corrosive vapours"
+    ],
+    "specs": [
+      {
+        "label": "Connection",
+        "value": "6 in / DN150 flanged"
+      },
+      {
+        "label": "Housing",
+        "value": "SS316"
+      },
+      {
+        "label": "Element",
+        "value": "Crimped ribbon SS316"
+      },
+      {
+        "label": "Gas group",
+        "value": "IIA / IIB3"
+      },
+      {
+        "label": "Standard",
+        "value": "EN ISO 16852 (detonation)"
+      }
+    ],
+    "compatibleEquipment": [
+      "Vapour recovery unit",
+      "Vent manifold"
+    ],
+    "leadTimeWeeks": 10,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": false,
+    "categoryId": "flame-arrestors--in-line"
+  },
+  {
+    "partNumber": "AST-PV-3010",
+    "slug": "pressure-vacuum-relief-valve-8in-ast-pv-3010",
+    "productName": "Pressure / Vacuum Relief Valve 8\"",
+    "family": "PV",
+    "manufacturer": "ASTSPARES",
+    "description": "Weight-loaded pressure-vacuum vent that protects the tank against over-pressure and vacuum during pumping and thermal breathing, while minimising standing-loss emissions.",
+    "features": [
+      "Independently adjustable pressure and vacuum settings",
+      "FEP-cushioned seats for tight seal at set point",
+      "Modular pallets for field re-setting",
+      "Flame-arrestor combination option (pairs with AST-FA-2010)"
+    ],
+    "specs": [
+      {
+        "label": "Connection",
+        "value": "8 in / DN200 flanged"
+      },
+      {
+        "label": "Body",
+        "value": "Aluminium / SS316 option"
+      },
+      {
+        "label": "Pressure set",
+        "value": "+10 to +60 mbar"
+      },
+      {
+        "label": "Vacuum set",
+        "value": "-2 to -25 mbar"
+      },
+      {
+        "label": "Standard",
+        "value": "API 2000 / ISO 28300"
+      }
+    ],
+    "compatibleEquipment": [
+      "Fixed-roof storage tank",
+      "Process vessel"
+    ],
+    "leadTimeWeeks": 9,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": true,
+    "categoryId": "pv-valves"
+  },
+  {
+    "partNumber": "AST-PV-3014",
+    "slug": "emergency-relief-manhole-cover-24in-ast-pv-3014",
+    "productName": "Emergency Relief Manhole Cover 24\"",
+    "family": "PV",
+    "manufacturer": "ASTSPARES",
+    "description": "Weight-loaded emergency relief cover for fixed-roof tanks, providing large additional venting capacity for fire-exposure and abnormal conditions per API 2000.",
+    "features": [
+      "Liftable cover with retention chain",
+      "Gasket seat for normal-condition tightness",
+      "Sized for fire-case venting capacity",
+      "Hot-dip galvanised frame"
+    ],
+    "specs": [
+      {
+        "label": "Connection",
+        "value": "24 in / DN600 nozzle"
+      },
+      {
+        "label": "Cover",
+        "value": "Carbon steel, galvanised"
+      },
+      {
+        "label": "Set pressure",
+        "value": "+20 to +75 mbar"
+      },
+      {
+        "label": "Gasket",
+        "value": "FKM / PTFE"
+      },
+      {
+        "label": "Standard",
+        "value": "API 2000 (emergency)"
+      }
+    ],
+    "compatibleEquipment": [
+      "Fixed-roof storage tank"
+    ],
+    "leadTimeWeeks": 8,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": true,
+    "categoryId": "pv-valves"
+  },
+  {
+    "partNumber": "AST-HS-4002",
+    "slug": "composite-loading-hose-3in-ast-hs-4002",
+    "productName": "Composite Loading Hose 3\"",
+    "family": "HS",
+    "manufacturer": "ASTSPARES",
+    "description": "Multi-layer composite transfer hose for road/rail and jetty loading of petroleum products. Lightweight, kink-resistant, with full PTFE inner film for broad chemical compatibility.",
+    "features": [
+      "PP/PTFE film construction, polypropylene inner wire",
+      "Static-dissipative, bonded end fittings",
+      "Working pressure 10 bar, full vacuum rated",
+      "Batch test certificate with each assembly"
+    ],
+    "specs": [
+      {
+        "label": "Bore",
+        "value": "3 in / 75 mm"
+      },
+      {
+        "label": "Length",
+        "value": "Made-to-order, per assembly"
+      },
+      {
+        "label": "End fittings",
+        "value": "SS316 cam-lock / flanged"
+      },
+      {
+        "label": "Working pressure",
+        "value": "10 bar"
+      },
+      {
+        "label": "Standard",
+        "value": "EN 13765"
+      }
+    ],
+    "compatibleEquipment": [
+      "Loading arm",
+      "Road tanker",
+      "Jetty manifold"
+    ],
+    "leadTimeWeeks": 4,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": true,
+    "categoryId": "hoses"
+  },
+  {
+    "partNumber": "AST-HS-4020",
+    "slug": "ptfe-lined-chemical-hose-2in-ast-hs-4020",
+    "productName": "PTFE-Lined Chemical Hose 2\"",
+    "family": "HS",
+    "manufacturer": "ASTSPARES",
+    "description": "Smooth-bore PTFE-lined hose with stainless braid for aggressive chemical transfer. Convoluted option available for tight bend radii at manifolds.",
+    "features": [
+      "Seamless PTFE liner, near-universal chemical resistance",
+      "304/316 stainless outer braid",
+      "Smooth or convoluted bore",
+      "Crimped or swaged fittings with traceability"
+    ],
+    "specs": [
+      {
+        "label": "Bore",
+        "value": "2 in / 50 mm"
+      },
+      {
+        "label": "Liner",
+        "value": "PTFE, smooth bore"
+      },
+      {
+        "label": "Braid",
+        "value": "SS316"
+      },
+      {
+        "label": "Working pressure",
+        "value": "16 bar"
+      },
+      {
+        "label": "Standard",
+        "value": "EN ISO 10380"
+      }
+    ],
+    "compatibleEquipment": [
+      "Chemical loading skid",
+      "Additive injection"
+    ],
+    "leadTimeWeeks": 5,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": false,
+    "categoryId": "hoses"
+  },
+  {
+    "partNumber": "AST-GK-5006",
+    "slug": "spiral-wound-gasket-class150-ast-gk-5006",
+    "productName": "Spiral-Wound Gasket \u2014 Class 150",
+    "family": "GK",
+    "manufacturer": "ASTSPARES",
+    "description": "Spiral-wound gasket with graphite filler and inner/outer rings for flanged shell connections and manways. Recovers under flange movement and thermal cycling.",
+    "features": [
+      "SS316 winding with flexible graphite filler",
+      "CS outer centring ring, SS316 inner ring",
+      "Colour-coded per ASME B16.20",
+      "Sizes 1/2\" to 24\", Class 150\u2013600"
+    ],
+    "specs": [
+      {
+        "label": "Type",
+        "value": "Spiral wound, CG (inner+outer ring)"
+      },
+      {
+        "label": "Winding",
+        "value": "SS316"
+      },
+      {
+        "label": "Filler",
+        "value": "Flexible graphite"
+      },
+      {
+        "label": "Rating",
+        "value": "ASME Class 150"
+      },
+      {
+        "label": "Standard",
+        "value": "ASME B16.20"
+      }
+    ],
+    "compatibleEquipment": [
+      "Flanged nozzle",
+      "Manway",
+      "Shell connection"
+    ],
+    "leadTimeWeeks": 3,
+    "status": "Active",
+    "images": [],
+    "datasheets": [],
+    "inStock": true,
+    "categoryId": "gaskets"
+  }
+]

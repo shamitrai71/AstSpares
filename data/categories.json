@@ -1,0 +1,26 @@
+[
+  { "id": "rim-seals", "slug": "rim-seals", "name": "Rim Seals", "parentId": null, "code": "RS", "order": 1,
+    "blurb": "Primary and secondary seals for external and internal floating-roof tanks. Vapour containment that meets API 650 Appendix H." },
+  { "id": "rim-seals--primary", "slug": "primary", "name": "Primary Seals", "parentId": "rim-seals", "order": 1,
+    "blurb": "Liquid- and vapour-mounted primary seals that ride directly against the shell." },
+  { "id": "rim-seals--primary--mechanical-shoe", "slug": "mechanical-shoe", "name": "Mechanical Shoe", "parentId": "rim-seals--primary", "order": 1,
+    "blurb": "Spring- or pantograph-mounted metal shoe seals for external floating roofs." },
+  { "id": "rim-seals--secondary", "slug": "secondary", "name": "Secondary Seals", "parentId": "rim-seals", "order": 2,
+    "blurb": "Wiper and compression secondary seals mounted above the primary to cut wind and evaporative loss." },
+
+  { "id": "flame-arrestors", "slug": "flame-arrestors", "name": "Flame Arrestors", "parentId": null, "code": "FA", "order": 2,
+    "blurb": "End-of-line and in-line deflagration and detonation arrestors for vents, drains and vapour-recovery lines." },
+  { "id": "flame-arrestors--end-of-line", "slug": "end-of-line", "name": "End-of-Line", "parentId": "flame-arrestors", "order": 1,
+    "blurb": "Deflagration arrestors for atmospheric tank vents and PV-valve inlets." },
+  { "id": "flame-arrestors--in-line", "slug": "in-line", "name": "In-Line", "parentId": "flame-arrestors", "order": 2,
+    "blurb": "Detonation arrestors for vapour-recovery and manifold piping." },
+
+  { "id": "pv-valves", "slug": "pv-valves", "name": "Pressure / Vacuum Valves", "parentId": null, "code": "PV", "order": 3,
+    "blurb": "Pressure-vacuum relief vents that protect tank shells while cutting breathing losses and emissions." },
+
+  { "id": "hoses", "slug": "hoses", "name": "Hoses & Assemblies", "parentId": null, "code": "HS", "order": 4,
+    "blurb": "Composite and PTFE-lined transfer hoses, loading-arm assemblies and couplings rated for hydrocarbons and chemicals." },
+
+  { "id": "gaskets", "slug": "gaskets", "name": "Gaskets & Sealing", "parentId": null, "code": "GK", "order": 5,
+    "blurb": "Spiral-wound, kammprofile and sheet gaskets for flanges, manways and shell connections." }
+]

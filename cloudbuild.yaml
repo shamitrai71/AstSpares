@@ -1,0 +1,38 @@
+# ASTSPARES — Cloud Build pipeline
+#
+# Refreshes the catalog snapshot from Firestore, builds the static export, and
+# deploys to Firebase Hosting. Runs entirely in Google Cloud Build and uses the
+# build service account's own identity for Firestore reads AND the deploy — no
+# service-account key is downloaded anywhere.
+#
+# Triggered by: a push to GitHub (code changes) OR a manual run (content
+# changes made in the admin — "Run trigger" in the console, or
+# `gcloud builds triggers run astspares-deploy`).
+
+steps:
+  # 1) Install, pull the latest catalog from Firestore, build the static site.
+  - name: node:20
+    id: build
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        npm ci
+        npm run export:products   # FIRESTORE_EXPORT=1 -> reads Firestore via ADC
+        npm run build             # next build -> static export into ./out
+    env:
+      - 'FIRESTORE_EXPORT=1'
+      - 'GOOGLE_CLOUD_PROJECT=astspares'
+
+  # 2) Deploy ./out to Firebase Hosting using the official Firebase builder.
+  #    Auth is the build service account (no token) — it needs Firebase Admin.
+  - name: us-docker.pkg.dev/firebase-cli/us/firebase
+    id: deploy
+    args: ['deploy', '--project=astspares', '--only=hosting']
+
+# Required when the build runs as a user-specified / compute service account.
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1800s
