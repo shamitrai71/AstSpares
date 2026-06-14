@@ -6,7 +6,6 @@ import './globals.css';
 import { RfqProvider } from '@/components/RfqProvider';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { getTopLevelCategories } from '@/lib/catalog';
 
 const display = Instrument_Serif({
   weight: '400',
@@ -31,10 +30,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const nav = getTopLevelCategories().map((c) => ({
-    href: `/products/${c.slug}/`,
-    label: c.name,
-  }));
+  const nav = [{ href: '/products/', label: 'Catalog' }];
   return (
     <html lang="en" className={`${display.variable} ${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
