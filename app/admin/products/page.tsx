@@ -61,6 +61,10 @@ const blankProduct = (): ProductDoc => ({
   status: 'Active',
   images: [],
   datasheets: [],
+  tags: [],
+  cataloguePdfUrl: '',
+  countryOfOrigin: '',
+  fulfilledBy: '',
   inStock: false,
 });
 
@@ -135,6 +139,10 @@ export default function AdminProducts() {
         images: p.images.map((f) => f.trim()).filter(Boolean),
         specs: p.specs.filter((s) => s.label.trim() || s.value.trim()),
         datasheets: p.datasheets.filter((d) => d.url.trim()),
+        tags: (p.tags ?? []).map((t) => t.trim()).filter(Boolean),
+        cataloguePdfUrl: (p.cataloguePdfUrl ?? '').trim(),
+        countryOfOrigin: (p.countryOfOrigin ?? '').trim(),
+        fulfilledBy: (p.fulfilledBy ?? '').trim(),
       };
       await upsertProduct(record);
       await load();
@@ -245,6 +253,17 @@ export default function AdminProducts() {
             </div>
           </div>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="field-label">Country of origin</span>
+              <input value={p.countryOfOrigin ?? ''} onChange={(e) => setField('countryOfOrigin', e.target.value)} placeholder="e.g. Germany" className="field" />
+            </label>
+            <label className="block">
+              <span className="field-label">Fulfilled by</span>
+              <input value={p.fulfilledBy ?? ''} onChange={(e) => setField('fulfilledBy', e.target.value)} placeholder="e.g. ASTSPARES — Jebel Ali" className="field" />
+            </label>
+          </div>
+
           <label className="block">
             <span className="field-label">Description</span>
             <textarea rows={3} value={p.description} onChange={(e) => setField('description', e.target.value)} className="field resize-none" />
@@ -264,8 +283,31 @@ export default function AdminProducts() {
           <LinesField label="Features (one per line)" value={p.features} onChange={(v) => setField('features', v)} />
           <LinesField label="Compatible equipment (one per line)" value={p.compatibleEquipment} onChange={(v) => setField('compatibleEquipment', v)} />
 
+          <label className="block">
+            <span className="field-label">SAP codes / search tags (comma-separated)</span>
+            <input
+              value={(p.tags ?? []).join(', ')}
+              onChange={(e) => setField('tags', e.target.value.split(','))}
+              placeholder="e.g. 100023491, CUST-AB-77, OEM-5521"
+              className="field font-mono text-xs"
+            />
+            <span className="mt-1 block text-xs text-petroleum-300">
+              Customers can find this part by searching any of these codes. Not shown on the public page.
+            </span>
+          </label>
+
           <SpecsEditor specs={p.specs} onChange={(v) => setField('specs', v)} />
           <DatasheetsEditor sheets={p.datasheets} onChange={(v) => setField('datasheets', v)} />
+
+          <label className="block">
+            <span className="field-label">Catalogue PDF (URL)</span>
+            <input
+              value={p.cataloguePdfUrl ?? ''}
+              onChange={(e) => setField('cataloguePdfUrl', e.target.value)}
+              placeholder="https://…/catalogue.pdf"
+              className="field font-mono text-xs"
+            />
+          </label>
 
           {error && <p className="text-sm text-safety-600">{error}</p>}
           <div className="flex gap-2 pt-2">

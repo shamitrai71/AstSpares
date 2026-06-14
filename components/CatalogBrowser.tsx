@@ -76,6 +76,7 @@ export function CatalogBrowser({
         p.manufacturer,
         ...p.compatibleEquipment,
         ...p.specs.map((s) => `${s.label} ${s.value}`),
+        ...(p.tags ?? []),
       ]
         .join(' ')
         .toLowerCase();

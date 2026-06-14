@@ -109,6 +109,12 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               ))}
             </div>
           )}
+
+          {product.cataloguePdfUrl && (
+            <a href={product.cataloguePdfUrl} className="btn-ghost mt-3 w-full justify-start">
+              ↓ Product catalogue (PDF)
+            </a>
+          )}
         </div>
 
         {/* detail */}
@@ -123,6 +129,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               {product.inStock ? 'In stock' : 'Made to order'}
             </span>
             <span>Lead time ≈ {product.leadTimeWeeks} weeks</span>
+            {product.countryOfOrigin && <span>Origin: {product.countryOfOrigin}</span>}
+            {product.fulfilledBy && <span>Fulfilled by {product.fulfilledBy}</span>}
           </div>
 
           <p className="mt-5 text-petroleum-ink/90">{product.description}</p>

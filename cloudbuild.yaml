@@ -24,6 +24,12 @@ steps:
     env:
       - 'FIRESTORE_EXPORT=1'
       - 'GOOGLE_CLOUD_PROJECT=astspares'
+      - 'NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyA8z7Lvt60W4-XT4OWCNoJaY-qkcYkL7BY'
+      - 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=astspares.firebaseapp.com'
+      - 'NEXT_PUBLIC_FIREBASE_PROJECT_ID=astspares'
+      - 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=astspares.firebasestorage.app'
+      - 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=29510678571'
+      - 'NEXT_PUBLIC_FIREBASE_APP_ID=1:29510678571:web:5ba4b367ac395feb84526e'
 
   # 2) Deploy ./out to Firebase Hosting using the official Firebase builder.
   #    Auth is the build service account (no token) — it needs Firebase Admin.

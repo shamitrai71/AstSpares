@@ -56,6 +56,14 @@ export interface ProductDoc {
   /** Cloudinary (or any) image URLs. First entry is the primary thumbnail. */
   images: string[];
   datasheets: { label: string; url: string }[];
+  /** Customer-specific SAP codes / aliases — searchable, not shown publicly. */
+  tags?: string[];
+  /** URL to a product catalogue PDF (e.g. hosted on Cloudinary). */
+  cataloguePdfUrl?: string;
+  /** e.g. "Germany". Shown on the product page. */
+  countryOfOrigin?: string;
+  /** Fulfilling entity / warehouse / partner. Shown on the product page. */
+  fulfilledBy?: string;
   /** Denormalised stock summary for catalog badges. */
   inStock: boolean;
   updatedAt?: number;
