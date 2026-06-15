@@ -105,3 +105,33 @@ export interface RfqDoc {
   createdAt: number;
   notifiedAt?: number;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Editable site content (homepage hero + footer). Stored in Firestore at
+// site/landing, snapshotted to data/site.json for the static build. Unset
+// fields fall back to SITE_DEFAULTS in lib/site.ts.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface FooterLink {
+  label: string;
+  href: string;
+}
+
+export interface FooterColumn {
+  title: string;
+  links: FooterLink[];
+}
+
+export interface SiteConfig {
+  heroEyebrow: string;
+  heroHeadline: string;
+  heroHeadlineAccent: string;
+  heroDescription: string;
+  /** Cloudinary image URL. When set, replaces the part-number plate in the hero. */
+  heroImageUrl: string;
+  footerTagline: string;
+  footerColumns: FooterColumn[];
+  footerEmail: string;
+  footerPhone: string;
+  updatedAt?: number;
+}

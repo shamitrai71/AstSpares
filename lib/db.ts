@@ -15,7 +15,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Category, RfqContact, RfqDoc, RfqItem, RfqStatus, ProductDoc } from './types';
+import type { Category, RfqContact, RfqDoc, RfqItem, RfqStatus, ProductDoc, SiteConfig } from './types';
 
 /**
  * Generate a unique RFQ reference the client can show immediately:
@@ -111,4 +111,15 @@ export async function upsertCategory(category: Category): Promise<void> {
 
 export async function deleteCategory(id: string): Promise<void> {
   await deleteDoc(doc(db, 'categories', id));
+}
+
+// ── Site content (homepage hero + footer) ───────────────────────────────────
+
+export async function getSiteConfigDoc(): Promise<Partial<SiteConfig> | null> {
+  const snap = await getDoc(doc(db, 'site', 'landing'));
+  return snap.exists() ? (snap.data() as Partial<SiteConfig>) : null;
+}
+
+export async function upsertSiteConfig(config: SiteConfig): Promise<void> {
+  await setDoc(doc(db, 'site', 'landing'), { ...config, updatedAt: Date.now() });
 }

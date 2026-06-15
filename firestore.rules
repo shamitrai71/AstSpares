@@ -26,6 +26,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Editable site content (hero, footer) — public read, admin write.
+    match /site/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     // Inventory — admins only (exposed to the catalog via the denormalised
     // inStock flag on the product, not read directly by the public).
     match /inventory/{partNumber} {

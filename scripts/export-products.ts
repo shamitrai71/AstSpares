@@ -38,6 +38,17 @@ async function main() {
   const catOut = resolve(process.cwd(), 'data', 'categories.json');
   writeFileSync(catOut, JSON.stringify(categories, null, 2) + '\n');
   console.log(`Wrote ${categories.length} categories to data/categories.json`);
+
+  const siteDoc = await db.collection('site').doc('landing').get();
+  const site = siteDoc.exists
+    ? (() => {
+        const { updatedAt, ...rest } = siteDoc.data() as Record<string, unknown>;
+        return rest;
+      })()
+    : {};
+  const siteOut = resolve(process.cwd(), 'data', 'site.json');
+  writeFileSync(siteOut, JSON.stringify(site, null, 2) + '\n');
+  console.log(`Wrote site config to data/site.json (${siteDoc.exists ? 'from Firestore' : 'empty — using defaults'})`);
 }
 
 main()
