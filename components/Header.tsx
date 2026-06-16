@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useRfq } from './RfqProvider';
+import { useAuth } from './AuthProvider';
 import { RfqDrawer } from './RfqDrawer';
 
 export interface NavItem {
@@ -13,6 +14,7 @@ export interface NavItem {
 
 export function Header({ nav = [] }: { nav?: NavItem[] }) {
   const { count, openDrawer } = useRfq();
+  const { user } = useAuth();
   const [q, setQ] = useState('');
   const router = useRouter();
 
@@ -58,6 +60,13 @@ export function Header({ nav = [] }: { nav?: NavItem[] }) {
                 →
               </button>
             </div>
+
+            <Link
+              href="/account/"
+              className="rounded-tag px-3 py-2 text-sm text-petroleum-300 transition-colors hover:text-petroleum"
+            >
+              {user ? 'Account' : 'Sign in'}
+            </Link>
 
             <button onClick={openDrawer} className="btn-primary relative">
               RFQ

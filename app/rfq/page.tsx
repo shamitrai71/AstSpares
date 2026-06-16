@@ -3,27 +3,58 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRfq } from '@/components/RfqProvider';
+import { BuyerGate } from '@/components/BuyerGate';
+import { useAuth } from '@/components/AuthProvider';
 import { submitRfq } from '@/lib/db';
 import type { RfqContact } from '@/lib/types';
 
-const EMPTY: RfqContact = { name: '', company: '', email: '', phone: '', country: '' };
-
 export default function RfqPage() {
+  // Sign-in + onboarding are enforced here; the form only renders for a
+  // signed-in, onboarded buyer.
+  return (
+    <BuyerGate>
+      <RfqForm />
+    </BuyerGate>
+  );
+}
+
+function RfqForm() {
   const { items, updateItem, removeItem, clear } = useRfq();
-  const [contact, setContact] = useState<RfqContact>(EMPTY);
+  const { user, buyer } = useAuth();
+
+  // Prefill the contact line from the buyer profile; phone/country stay editable.
+  const [contact, setContact] = useState<RfqContact>({
+    name: buyer?.name ?? '',
+    company: buyer?.companyName ?? '',
+    email: buyer?.email ?? user?.email ?? '',
+    phone: buyer?.phone ?? '',
+    country: '',
+  });
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
   const [rfqNo, setRfqNo] = useState('');
   const [error, setError] = useState('');
 
-  const valid = contact.name && contact.company && /\S+@\S+\.\S+/.test(contact.email) && items.length > 0;
+  const valid =
+    contact.name &&
+    contact.company &&
+    /\S+@\S+\.\S+/.test(contact.email) &&
+    items.length > 0;
 
   const handleSubmit = async () => {
-    if (!valid) return;
+    if (!valid || !user || !buyer) return;
     setStatus('submitting');
     setError('');
     try {
-      const no = await submitRfq(contact, items, message);
+      const no = await submitRfq({
+        contact,
+        items,
+        message,
+        buyerUid: user.uid,
+        buyerId: buyer.id,
+        companyId: buyer.companyId,
+        locationId: buyer.locationId,
+      });
       setRfqNo(no);
       setStatus('done');
       clear();
@@ -39,11 +70,12 @@ export default function RfqPage() {
         <p className="eyebrow text-safety-600">Request received</p>
         <h1 className="mt-3 font-display text-4xl">RFQ submitted</h1>
         <p className="mx-auto mt-3 max-w-md text-petroleum-300">
-          Your reference is below. Our team will reply by email with pricing and confirmed lead
-          times. A copy has been sent to {contact.email}.
+          Your reference is below. You’ll get an email when our team posts a budgetary quote — you’ll
+          review and respond to it right here in your account.
         </p>
         <p className="part-plate mx-auto mt-6 text-lg">{rfqNo}</p>
-        <div className="mt-8">
+        <div className="mt-8 flex justify-center gap-3">
+          <Link href="/account/" className="btn-primary">Go to my account</Link>
           <Link href="/products/" className="btn-ghost">Continue browsing</Link>
         </div>
       </div>
@@ -54,6 +86,10 @@ export default function RfqPage() {
     <div className="shell py-12">
       <p className="eyebrow">Procurement</p>
       <h1 className="mt-2 font-display text-4xl">Your request for quote</h1>
+      <p className="mt-1 text-sm text-petroleum-300">
+        Submitting as <span className="font-mono text-petroleum">{buyer?.companyName}</span>
+        {buyer?.locationName ? ` · ${buyer.locationName}` : ''} ({buyer?.id})
+      </p>
 
       {items.length === 0 ? (
         <div className="panel mt-8 p-10 text-center">
@@ -151,7 +187,7 @@ export default function RfqPage() {
               {status === 'submitting' ? 'Submitting…' : 'Submit RFQ'}
             </button>
             <p className="mt-2 text-center text-xs text-petroleum-300">
-              No pricing is shown online. We respond by email with a quote.
+              No pricing online. We reply with a budgetary quote you review in your account.
             </p>
           </div>
         </div>

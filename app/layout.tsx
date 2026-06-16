@@ -3,6 +3,7 @@ import { Instrument_Serif } from 'next/font/google';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
+import { AuthProvider } from '@/components/AuthProvider';
 import { RfqProvider } from '@/components/RfqProvider';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -34,11 +35,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
-        <RfqProvider>
-          <Header nav={nav} />
-          <main className="min-h-[60vh]">{children}</main>
-          <Footer />
-        </RfqProvider>
+        <AuthProvider>
+          <RfqProvider>
+            <Header nav={nav} />
+            <main className="min-h-[60vh]">{children}</main>
+            <Footer />
+          </RfqProvider>
+        </AuthProvider>
       </body>
     </html>
   );

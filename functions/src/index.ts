@@ -1,4 +1,5 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions';
 import * as admin from 'firebase-admin';
@@ -119,3 +120,55 @@ export const onRfqCreated = onDocumentCreated(
     }
   },
 );
+
+// ─────────────────────────────────────────────────────────────────────────
+// mintSequence — atomic, gap-free ID generator.
+//
+// Counters live at /counters/{name} and are written only here (Admin SDK),
+// so clients can never tamper with them. Formats:
+//   company  AST-CO-#####
+//   buyer    AST-BUY-#####
+//   po       AST-PO-<year>-#####   (counter resets per year; admin-only)
+// Returns { id, seq }.
+// ─────────────────────────────────────────────────────────────────────────
+type SeqName = 'company' | 'buyer' | 'po';
+
+function formatSeq(name: SeqName, n: number, year: number): string {
+  const pad = (v: number) => String(v).padStart(5, '0');
+  if (name === 'company') return `AST-CO-${pad(n)}`;
+  if (name === 'buyer') return `AST-BUY-${pad(n)}`;
+  return `AST-PO-${year}-${pad(n)}`;
+}
+
+export const mintSequence = onCall({ region: 'asia-south1' }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'You must be signed in.');
+  }
+  const name = String(request.data?.name ?? '') as SeqName;
+  if (name !== 'company' && name !== 'buyer' && name !== 'po') {
+    throw new HttpsError('invalid-argument', `Unknown sequence "${name}".`);
+  }
+
+  const db = admin.firestore();
+
+  // PO numbers are issued only by admins.
+  if (name === 'po') {
+    const isAdmin = (await db.doc(`admins/${request.auth.uid}`).get()).exists;
+    if (!isAdmin) throw new HttpsError('permission-denied', 'Admins only.');
+  }
+
+  const year = new Date().getFullYear();
+  // PO resets yearly → per-year counter doc; others are a single running counter.
+  const counterId = name === 'po' ? `po-${year}` : name;
+  const ref = db.doc(`counters/${counterId}`);
+
+  const seq = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const current = snap.exists ? ((snap.data()?.seq as number) ?? 0) : 0;
+    const next = current + 1;
+    tx.set(ref, { seq: next, updatedAt: Date.now() }, { merge: true });
+    return next;
+  });
+
+  return { id: formatSeq(name, seq, year), seq };
+});

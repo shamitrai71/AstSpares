@@ -77,6 +77,67 @@ export interface Inventory {
   location: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Buyer / Company / Location master records
+//
+// channel marks how the record entered the system:
+//   'online'  — a signed-in buyer using the site
+//   'offline' — an order the admin entered from outside the RFQ flow
+// This flag drives both visibility (offline = admin-only) and analytics.
+// IDs are minted atomically by the mintSequence Cloud Function:
+//   Company  AST-CO-#####   Buyer  AST-BUY-#####   PO  AST-PO-<year>-#####
+// ─────────────────────────────────────────────────────────────────────────
+
+export type Channel = 'online' | 'offline';
+
+export type CompanyType = 'operator' | 'epc' | 'oem' | 'inspector' | 'other';
+
+export interface Company {
+  /** AST-CO-00001 — also the Firestore doc ID. */
+  id: string;
+  name: string;
+  type?: CompanyType;
+  country?: string;
+  /** Admin-confirmed vs buyer-added. New buyer-created companies start false. */
+  verified: boolean;
+  createdBy?: string;
+  createdAt: number;
+  updatedAt?: number;
+}
+
+export interface CompanyLocation {
+  /** Firestore auto-id (scoped under its company). */
+  id: string;
+  companyId: string;
+  /** Site / terminal name, e.g. "Jamnagar Terminal". */
+  name: string;
+  city?: string;
+  country?: string;
+  createdBy?: string;
+  createdAt: number;
+}
+
+export interface Buyer {
+  /** AST-BUY-00001 — also the Firestore doc ID. */
+  id: string;
+  /** Firebase Auth uid for online buyers; null for admin-created offline buyers. */
+  uid: string | null;
+  name: string;
+  email: string;
+  phone?: string;
+  companyId: string;
+  /** Denormalised for display, the RFQ contact line, and analytics rollups. */
+  companyName: string;
+  locationId?: string;
+  locationName?: string;
+  channel: Channel;
+  /** Admin-confirmed. */
+  verified: boolean;
+  createdBy?: string;
+  createdAt: number;
+  updatedAt?: number;
+}
+
 export interface RfqItem {
   partNumber: string;
   productName: string;
@@ -98,6 +159,14 @@ export interface RfqContact {
 
 export interface RfqDoc {
   rfqNo: string;
+  /** 'online' (buyer-submitted) or 'offline' (admin-entered). */
+  channel: Channel;
+  /** Online only: the submitting buyer's auth uid (drives buyer read access). */
+  buyerUid?: string | null;
+  /** Links the RFQ to the buyer/company/location master records. */
+  buyerId?: string;
+  companyId?: string;
+  locationId?: string;
   contact: RfqContact;
   items: RfqItem[];
   message?: string;

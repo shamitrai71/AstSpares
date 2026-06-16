@@ -30,22 +30,34 @@ function newRfqNo(): string {
 }
 
 /**
- * Submit an RFQ. Writes a single document to /rfqs; a Firestore-triggered
- * Cloud Function then emails the sales team and the customer (see functions/).
+ * Submit an online RFQ for a signed-in buyer. Writes a single document to
+ * /rfqs stamped with the buyer/company/location linkage and channel 'online';
+ * a Firestore-triggered Cloud Function then emails sales and the buyer.
  * Returns the generated RFQ number.
  */
-export async function submitRfq(
-  contact: RfqContact,
-  items: RfqItem[],
-  message?: string,
-): Promise<string> {
-  if (items.length === 0) throw new Error('Add at least one item to the RFQ before submitting.');
+export async function submitRfq(input: {
+  contact: RfqContact;
+  items: RfqItem[];
+  message?: string;
+  buyerUid: string;
+  buyerId: string;
+  companyId: string;
+  locationId?: string;
+}): Promise<string> {
+  if (input.items.length === 0) {
+    throw new Error('Add at least one item to the RFQ before submitting.');
+  }
   const rfqNo = newRfqNo();
   const payload: RfqDoc = {
     rfqNo,
-    contact,
-    items,
-    message: message?.trim() || undefined,
+    channel: 'online',
+    buyerUid: input.buyerUid,
+    buyerId: input.buyerId,
+    companyId: input.companyId,
+    ...(input.locationId ? { locationId: input.locationId } : {}),
+    contact: input.contact,
+    items: input.items,
+    ...(input.message?.trim() ? { message: input.message.trim() } : {}),
     status: 'Pending',
     createdAt: Date.now(),
   };
