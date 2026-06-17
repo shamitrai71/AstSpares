@@ -98,6 +98,8 @@ export interface Company {
   name: string;
   type?: CompanyType;
   country?: string;
+  /** ISO 4217 code (e.g. 'USD'). Quotes and POs default to this. */
+  defaultCurrency?: string;
   /** Admin-confirmed vs buyer-added. New buyer-created companies start false. */
   verified: boolean;
   createdBy?: string;
@@ -125,6 +127,11 @@ export interface Buyer {
   name: string;
   email: string;
   phone?: string;
+  /** Phone country code, E.164 style, e.g. '+91'. Pairs with `phone`. */
+  dialCode?: string;
+  country?: string;
+  designation?: string;
+  department?: string;
   companyId: string;
   /** Denormalised for display, the RFQ contact line, and analytics rollups. */
   companyName: string;
@@ -154,7 +161,10 @@ export interface RfqContact {
   company: string;
   email: string;
   phone?: string;
+  dialCode?: string;
   country?: string;
+  designation?: string;
+  department?: string;
 }
 
 export interface RfqDoc {

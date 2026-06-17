@@ -28,7 +28,10 @@ function RfqForm() {
     company: buyer?.companyName ?? '',
     email: buyer?.email ?? user?.email ?? '',
     phone: buyer?.phone ?? '',
-    country: '',
+    dialCode: buyer?.dialCode,
+    country: buyer?.country ?? '',
+    designation: buyer?.designation,
+    department: buyer?.department,
   });
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
@@ -161,8 +164,26 @@ function RfqForm() {
               <Field label="Name *" value={contact.name} onChange={(v) => setContact({ ...contact, name: v })} />
               <Field label="Company *" value={contact.company} onChange={(v) => setContact({ ...contact, company: v })} />
               <Field label="Work email *" type="email" value={contact.email} onChange={(v) => setContact({ ...contact, email: v })} />
+              {(contact.designation || contact.department) && (
+                <p className="text-xs text-petroleum-300">
+                  {[contact.designation, contact.department].filter(Boolean).join(' · ')}
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Phone" value={contact.phone ?? ''} onChange={(v) => setContact({ ...contact, phone: v })} />
+                <label className="block">
+                  <span className="field-label">Phone</span>
+                  <div className="flex">
+                    <span className="inline-flex items-center rounded-l-tag border border-r-0 border-paper-line bg-paper-200 px-2 text-sm text-petroleum-300">
+                      {contact.dialCode ?? '+—'}
+                    </span>
+                    <input
+                      value={contact.phone ?? ''}
+                      onChange={(e) => setContact({ ...contact, phone: e.target.value.replace(/[^\d\s]/g, '') })}
+                      className="field rounded-l-none"
+                      inputMode="tel"
+                    />
+                  </div>
+                </label>
                 <Field label="Country" value={contact.country ?? ''} onChange={(v) => setContact({ ...contact, country: v })} />
               </div>
               <label className="block">

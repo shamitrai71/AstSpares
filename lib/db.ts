@@ -48,6 +48,10 @@ export async function submitRfq(input: {
     throw new Error('Add at least one item to the RFQ before submitting.');
   }
   const rfqNo = newRfqNo();
+  // Drop empty/undefined optional contact fields (Firestore rejects undefined).
+  const contact = Object.fromEntries(
+    Object.entries(input.contact).filter(([, v]) => v !== undefined && v !== ''),
+  ) as RfqContact;
   const payload: RfqDoc = {
     rfqNo,
     channel: 'online',
@@ -55,7 +59,7 @@ export async function submitRfq(input: {
     buyerId: input.buyerId,
     companyId: input.companyId,
     ...(input.locationId ? { locationId: input.locationId } : {}),
-    contact: input.contact,
+    contact,
     items: input.items,
     ...(input.message?.trim() ? { message: input.message.trim() } : {}),
     status: 'Pending',

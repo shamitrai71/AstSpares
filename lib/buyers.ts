@@ -40,6 +40,10 @@ export async function createBuyerProfile(input: {
   email: string;
   name: string;
   phone?: string;
+  dialCode?: string;
+  country?: string;
+  designation?: string;
+  department?: string;
   companyId: string;
   companyName: string;
   locationId?: string;
@@ -52,6 +56,10 @@ export async function createBuyerProfile(input: {
     name: input.name.trim(),
     email: input.email,
     phone: input.phone?.trim() || undefined,
+    dialCode: input.dialCode || undefined,
+    country: input.country || undefined,
+    designation: input.designation?.trim() || undefined,
+    department: input.department?.trim() || undefined,
     companyId: input.companyId,
     companyName: input.companyName,
     locationId: input.locationId,
@@ -65,6 +73,15 @@ export async function createBuyerProfile(input: {
   return buyer;
 }
 
+/** Buyer self-service update of their own contact fields (rules-whitelisted). */
+export async function updateBuyerProfile(
+  buyerId: string,
+  patch: Partial<Pick<Buyer, 'name' | 'phone' | 'dialCode' | 'country' | 'designation' | 'department'>>,
+): Promise<void> {
+  const data = clean({ ...patch, updatedAt: Date.now() }) as Record<string, unknown>;
+  await updateDoc(doc(db, 'buyers', buyerId), data);
+}
+
 // ── Companies ────────────────────────────────────────────────────────────────
 
 export async function listCompanies(): Promise<Company[]> {
@@ -73,7 +90,7 @@ export async function listCompanies(): Promise<Company[]> {
 }
 
 export async function createCompany(
-  input: { name: string; type?: CompanyType; country?: string },
+  input: { name: string; type?: CompanyType; country?: string; defaultCurrency?: string },
   uid: string,
 ): Promise<Company> {
   const id = await mint('company');
@@ -82,6 +99,7 @@ export async function createCompany(
     name: input.name.trim(),
     type: input.type,
     country: input.country?.trim() || undefined,
+    defaultCurrency: input.defaultCurrency || undefined,
     verified: false,
     createdBy: uid,
     createdAt: Date.now(),
