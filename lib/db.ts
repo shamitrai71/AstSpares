@@ -73,6 +73,39 @@ export async function submitRfq(input: {
   return rfqNo;
 }
 
+/**
+ * Admin-only: record an offline order's originating RFQ (channel 'offline',
+ * no buyerUid). Returns the generated RFQ number, which the PO then links to.
+ */
+export async function createOfflineRfq(input: {
+  contact: RfqContact;
+  items: RfqItem[];
+  buyerId: string;
+  companyId: string;
+  locationId?: string;
+  status?: RfqStatus;
+  message?: string;
+}): Promise<string> {
+  const rfqNo = newRfqNo();
+  const contact = Object.fromEntries(
+    Object.entries(input.contact).filter(([, v]) => v !== undefined && v !== ''),
+  ) as RfqContact;
+  const payload: RfqDoc = {
+    rfqNo,
+    channel: 'offline',
+    buyerId: input.buyerId,
+    companyId: input.companyId,
+    ...(input.locationId ? { locationId: input.locationId } : {}),
+    contact,
+    items: input.items,
+    ...(input.message?.trim() ? { message: input.message.trim() } : {}),
+    status: input.status ?? 'Won',
+    createdAt: Date.now(),
+  };
+  await setDoc(doc(db, 'rfqs', rfqNo), { ...payload, createdAtServer: serverTimestamp() });
+  return rfqNo;
+}
+
 // ── Admin reads/writes ────────────────────────────────────────────────────
 
 export async function listRfqs(status?: RfqStatus): Promise<RfqDoc[]> {

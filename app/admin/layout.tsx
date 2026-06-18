@@ -16,6 +16,9 @@ import { useAdminAuth } from '@/lib/useAdminAuth';
 const TABS = [
   { href: '/admin/', label: 'Dashboard' },
   { href: '/admin/rfqs/', label: 'RFQs' },
+  { href: '/admin/offline/', label: 'Offline order' },
+  { href: '/admin/companies/', label: 'Companies' },
+  { href: '/admin/buyers/', label: 'Buyers' },
   { href: '/admin/categories/', label: 'Categories' },
   { href: '/admin/products/', label: 'Products' },
   { href: '/admin/landing/', label: 'Landing' },

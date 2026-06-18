@@ -214,3 +214,54 @@ export interface SiteConfig {
   footerPhone: string;
   updatedAt?: number;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Purchase Orders
+//
+// A PO is a document (uploaded to private Storage) plus structured data the
+// admin enters manually. `channel` distinguishes orders that came through the
+// site ('online') from those the admin entered from outside it ('offline').
+// poNumber is system-minted (AST-PO-<year>-#####); buyerPoNumber is theirs.
+// ─────────────────────────────────────────────────────────────────────────
+
+export type PoStatus = 'issued' | 'acknowledged' | 'fulfilled' | 'closed' | 'cancelled';
+
+export interface PoLineItem {
+  partNumber?: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface PurchaseOrder {
+  /** Doc ID === poNumber. */
+  poNumber: string;
+  buyerPoNumber?: string;
+  channel: Channel;
+  /** The linked RFQ (online, or the admin-created offline RFQ). */
+  rfqNo?: string;
+  /** Online only — lets the owning buyer read their PO. */
+  buyerUid?: string | null;
+  buyerId?: string;
+  companyId?: string;
+  companyName?: string;
+  locationId?: string;
+  contact?: RfqContact;
+  currency: string;
+  lineItems: PoLineItem[];
+  subtotal: number;
+  total: number;
+  orderDate?: string;
+  requiredDate?: string;
+  deliveryTerms?: string;
+  paymentTerms?: string;
+  documentUrl?: string;
+  documentPath?: string;
+  uploadedBy?: 'buyer' | 'admin';
+  status: PoStatus;
+  notes?: string;
+  enteredByUid: string;
+  createdAt: number;
+  updatedAt?: number;
+}

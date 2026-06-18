@@ -50,8 +50,7 @@ service cloud.firestore {
 
       function isValidNewRfq() {
         let d = request.resource.data;
-        return d.status == 'Pending'
-          && d.contact.email is string
+        return d.contact.email is string
           && d.contact.email.matches('^[^@]+@[^@]+\\.[^@]+$')
           && d.contact.name is string && d.contact.name.size() > 0
           && d.contact.company is string && d.contact.company.size() > 0
@@ -59,10 +58,11 @@ service cloud.firestore {
           && (
             // online: signed-in buyer submitting for themselves
             (isSignedIn() && d.channel == 'online'
+              && d.status == 'Pending'
               && d.buyerUid == request.auth.uid
               && d.buyerId is string && d.companyId is string)
-            // offline: admin-entered record
-            || (isAdmin() && d.channel == 'offline')
+            // offline: admin-entered record (status set by admin)
+            || (isAdmin() && d.channel == 'offline' && d.status is string)
           );
       }
     }
@@ -93,13 +93,14 @@ service cloud.firestore {
     match /buyers/{buyerId} {
       allow read: if isAdmin()
         || (isSignedIn() && resource.data.uid == request.auth.uid);
-      allow create: if isSignedIn()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.channel == 'online'
-        && request.resource.data.verified == false
-        && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
-        && request.resource.data.companyId is string;
+      allow create: if isAdmin()
+        || (isSignedIn()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.channel == 'online'
+          && request.resource.data.verified == false
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.companyId is string);
       // Buyer may amend only their own contact fields; admins may change anything.
       allow update: if isAdmin()
         || (isSignedIn() && resource.data.uid == request.auth.uid
@@ -108,6 +109,14 @@ service cloud.firestore {
                  .hasOnly(['name', 'phone', 'dialCode', 'country', 'designation',
                            'department', 'locationId', 'locationName', 'updatedAt']));
       allow delete: if isAdmin();
+    }
+
+    // Purchase orders — admin enters/manages all data; the owning buyer (online)
+    // may read their own. Offline POs carry no buyerUid, so they're admin-only.
+    match /purchaseOrders/{poNumber} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.buyerUid == request.auth.uid);
+      allow create, update, delete: if isAdmin();
     }
 
     // Atomic ID counters — minted only by the mintSequence Cloud Function

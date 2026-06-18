@@ -4,6 +4,7 @@
 // the firestore.rules that scope them to the owning buyer / admins.
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   limit,
@@ -145,4 +146,75 @@ export async function listAllBuyers(): Promise<Buyer[]> {
 
 export async function setCompanyVerified(id: string, verified: boolean): Promise<void> {
   await updateDoc(doc(db, 'companies', id), { verified, updatedAt: Date.now() });
+}
+
+// ── Admin master-list management ─────────────────────────────────────────────
+
+export async function updateCompany(
+  id: string,
+  patch: Partial<Pick<Company, 'name' | 'type' | 'country' | 'defaultCurrency' | 'verified'>>,
+): Promise<void> {
+  await updateDoc(doc(db, 'companies', id), clean({ ...patch, updatedAt: Date.now() }));
+}
+
+export async function deleteCompany(id: string): Promise<void> {
+  // Remove its locations first (client SDK can't delete a subcollection in one call).
+  const locs = await listLocations(id);
+  await Promise.all(locs.map((l) => deleteDoc(doc(db, 'companies', id, 'locations', l.id))));
+  await deleteDoc(doc(db, 'companies', id));
+}
+
+export async function updateLocation(
+  companyId: string,
+  locationId: string,
+  patch: Partial<Pick<CompanyLocation, 'name' | 'city' | 'country'>>,
+): Promise<void> {
+  await updateDoc(doc(db, 'companies', companyId, 'locations', locationId), clean({ ...patch }));
+}
+
+export async function deleteLocation(companyId: string, locationId: string): Promise<void> {
+  await deleteDoc(doc(db, 'companies', companyId, 'locations', locationId));
+}
+
+export async function updateBuyer(buyerId: string, patch: Partial<Buyer>): Promise<void> {
+  await updateDoc(doc(db, 'buyers', buyerId), clean({ ...patch, updatedAt: Date.now() }) as Record<string, unknown>);
+}
+
+/** Admin-created offline buyer (no auth uid, channel 'offline'). */
+export async function createOfflineBuyer(input: {
+  adminUid: string;
+  name: string;
+  email: string;
+  phone?: string;
+  dialCode?: string;
+  country?: string;
+  designation?: string;
+  department?: string;
+  companyId: string;
+  companyName: string;
+  locationId?: string;
+  locationName?: string;
+}): Promise<Buyer> {
+  const id = await mint('buyer');
+  const buyer: Buyer = clean({
+    id,
+    uid: null,
+    name: input.name.trim(),
+    email: input.email.trim(),
+    phone: input.phone?.trim() || undefined,
+    dialCode: input.dialCode || undefined,
+    country: input.country || undefined,
+    designation: input.designation?.trim() || undefined,
+    department: input.department?.trim() || undefined,
+    companyId: input.companyId,
+    companyName: input.companyName,
+    locationId: input.locationId,
+    locationName: input.locationName,
+    channel: 'offline',
+    verified: true,
+    createdBy: input.adminUid,
+    createdAt: Date.now(),
+  }) as Buyer;
+  await setDoc(doc(db, 'buyers', id), buyer);
+  return buyer;
 }
