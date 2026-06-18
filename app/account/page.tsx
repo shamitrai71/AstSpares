@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { BuyerGate } from '@/components/BuyerGate';
 import { useAuth } from '@/components/AuthProvider';
+import { QuoteThread } from '@/components/QuoteThread';
 import { updateBuyerProfile } from '@/lib/buyers';
+import { listMyRfqs } from '@/lib/quotes';
 import { COUNTRIES } from '@/lib/countries';
+import type { RfqDoc } from '@/lib/types';
 
 export default function AccountPage() {
   return (
@@ -66,14 +69,16 @@ function AccountHome() {
         </div>
 
         <div className="panel p-5">
-          <p className="field-label">Your requests & quotes</p>
+          <p className="field-label">Requests & quotes</p>
           <p className="mt-2 text-sm text-petroleum-300">
-            Your RFQs and the budgetary quotes our team posts will appear here, where you can accept
-            or negotiate. Start by building an RFQ from the catalog.
+            Build an RFQ from the catalog; the budgetary quotes our team posts appear below, where you
+            can accept or negotiate.
           </p>
           <Link href="/products/" className="btn-primary mt-4">Browse the catalog</Link>
         </div>
       </div>
+
+      <MyRequests />
 
       {isAdmin && (
         <p className="mt-6 text-sm text-petroleum-300">
@@ -174,6 +179,62 @@ function ProfileEditor({ onDone }: { onDone: () => Promise<void> }) {
         </button>
         <button onClick={onDone} className="btn-ghost">Cancel</button>
       </div>
+    </div>
+  );
+}
+
+function MyRequests() {
+  const { user } = useAuth();
+  const [rfqs, setRfqs] = useState<RfqDoc[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+
+  const load = () => {
+    if (user) listMyRfqs(user.uid).then(setRfqs).catch(() => setRfqs([]));
+  };
+  useEffect(load, [user]);
+
+  return (
+    <div className="mt-8">
+      <h2 className="font-display text-2xl">My requests</h2>
+      {rfqs === null ? (
+        <p className="mt-3 text-sm text-petroleum-300">Loading…</p>
+      ) : rfqs.length === 0 ? (
+        <p className="mt-3 text-sm text-petroleum-300">No requests yet — build one from the catalog.</p>
+      ) : (
+        <div className="mt-3 space-y-3">
+          {rfqs.map((r) => (
+            <div key={r.rfqNo} className="panel p-4">
+              <button onClick={() => setOpen(open === r.rfqNo ? null : r.rfqNo)} className="flex w-full items-center justify-between text-left">
+                <span>
+                  <span className="part-plate">{r.rfqNo}</span>
+                  <span className="ml-3 text-sm text-petroleum-300">{r.items.length} item{r.items.length === 1 ? '' : 's'}</span>
+                </span>
+                <span className={`eyebrow ${r.status === 'Won' ? 'text-safety-600' : 'text-petroleum-300'}`}>{r.status}</span>
+              </button>
+
+              {open === r.rfqNo && (
+                <div className="mt-3 border-t border-paper-line pt-3">
+                  <ul className="text-sm text-petroleum-300">
+                    {r.items.map((it) => (
+                      <li key={it.partNumber}>
+                        <span className="font-mono text-petroleum">{it.partNumber}</span> · {it.productName} × {it.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                  <QuoteThread
+                    rfqNo={r.rfqNo}
+                    role="buyer"
+                    uid={user?.uid ?? ''}
+                    name={r.contact.name}
+                    rfqStatus={r.status}
+                    onChanged={load}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -2,18 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { listRfqs, setRfqStatus } from '@/lib/db';
+import { useAuth } from '@/components/AuthProvider';
+import { QuoteBuilder } from '@/components/QuoteBuilder';
+import { QuoteThread } from '@/components/QuoteThread';
 import type { RfqDoc, RfqStatus } from '@/lib/types';
 
-const STATUSES: RfqStatus[] = ['Pending', 'Quoted', 'Won', 'Lost'];
+const STATUSES: RfqStatus[] = ['Pending', 'Quoted', 'Negotiating', 'Won', 'Lost'];
 
 export default function AdminRfqs() {
+  const { user } = useAuth();
+  const adminUid = user?.uid ?? '';
   const [rfqs, setRfqs] = useState<RfqDoc[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [bump, setBump] = useState(0);
 
   const load = () => listRfqs().then(setRfqs).catch(() => setRfqs([]));
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const changeStatus = async (rfqNo: string, status: RfqStatus) => {
     await setRfqStatus(rfqNo, status);
@@ -37,12 +41,13 @@ export default function AdminRfqs() {
                   <p className="mt-1.5 text-sm text-petroleum">
                     {r.contact.company} — {r.contact.name} ·{' '}
                     <span className="text-petroleum-300">{r.items.length} item{r.items.length === 1 ? '' : 's'}</span>
+                    {r.channel === 'offline' && <span className="eyebrow ml-2 text-petroleum-300">offline</span>}
                   </p>
                 </button>
                 <select
                   value={r.status}
                   onChange={(e) => changeStatus(r.rfqNo, e.target.value as RfqStatus)}
-                  className="field w-32"
+                  className="field w-36"
                 >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>{s}</option>
@@ -56,7 +61,7 @@ export default function AdminRfqs() {
                     <a href={`mailto:${r.contact.email}`} className="text-safety-600 hover:underline">
                       {r.contact.email}
                     </a>
-                    {r.contact.phone ? ` · ${r.contact.phone}` : ''}
+                    {r.contact.phone ? ` · ${r.contact.dialCode ?? ''} ${r.contact.phone}` : ''}
                     {r.contact.country ? ` · ${r.contact.country}` : ''}
                   </p>
                   {r.message && <p className="mt-2 text-sm text-petroleum-ink/90">“{r.message}”</p>}
@@ -80,6 +85,21 @@ export default function AdminRfqs() {
                       ))}
                     </tbody>
                   </table>
+
+                  <QuoteBuilder
+                    rfq={r}
+                    adminUid={adminUid}
+                    onPosted={() => { setBump((b) => b + 1); load(); }}
+                  />
+                  <QuoteThread
+                    rfqNo={r.rfqNo}
+                    role="admin"
+                    uid={adminUid}
+                    name="ASTSPARES"
+                    rfqStatus={r.status}
+                    bump={bump}
+                    onChanged={load}
+                  />
                 </div>
               )}
             </div>

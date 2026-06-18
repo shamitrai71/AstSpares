@@ -46,7 +46,35 @@ service cloud.firestore {
       allow create: if isValidNewRfq();
       allow read: if isAdmin()
         || (isSignedIn() && resource.data.buyerUid == request.auth.uid);
-      allow update, delete: if isAdmin();
+      // Buyer may only move their own RFQ through accept/negotiate states.
+      allow update: if isAdmin()
+        || (isSignedIn() && resource.data.buyerUid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'acceptedQuoteId', 'acceptedAt', 'updatedAt'])
+            && request.resource.data.status in ['Quoted', 'Negotiating', 'Won']);
+      allow delete: if isAdmin();
+
+      // Budgetary quotes — admin writes, the owning buyer reads.
+      match /quotes/{quoteId} {
+        allow read: if isAdmin()
+          || (isSignedIn()
+              && get(/databases/$(database)/documents/rfqs/$(rfqNo)).data.buyerUid == request.auth.uid);
+        allow create, update, delete: if isAdmin();
+      }
+
+      // Negotiation thread — admin and the owning buyer can post and read.
+      match /messages/{msgId} {
+        allow read: if isAdmin()
+          || (isSignedIn()
+              && get(/databases/$(database)/documents/rfqs/$(rfqNo)).data.buyerUid == request.auth.uid);
+        allow create: if isAdmin()
+          || (isSignedIn()
+              && get(/databases/$(database)/documents/rfqs/$(rfqNo)).data.buyerUid == request.auth.uid
+              && request.resource.data.senderUid == request.auth.uid
+              && request.resource.data.senderRole == 'buyer'
+              && request.resource.data.body is string
+              && request.resource.data.body.size() > 0);
+      }
 
       function isValidNewRfq() {
         let d = request.resource.data;

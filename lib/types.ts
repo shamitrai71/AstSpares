@@ -154,7 +154,7 @@ export interface RfqItem {
   note?: string;
 }
 
-export type RfqStatus = 'Pending' | 'Quoted' | 'Won' | 'Lost';
+export type RfqStatus = 'Pending' | 'Quoted' | 'Negotiating' | 'Won' | 'Lost';
 
 export interface RfqContact {
   name: string;
@@ -181,6 +181,9 @@ export interface RfqDoc {
   items: RfqItem[];
   message?: string;
   status: RfqStatus;
+  /** Set when the buyer accepts a quote. */
+  acceptedQuoteId?: string;
+  acceptedAt?: number;
   createdAt: number;
   notifiedAt?: number;
 }
@@ -264,4 +267,50 @@ export interface PurchaseOrder {
   enteredByUid: string;
   createdAt: number;
   updatedAt?: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Budgetary quotes + negotiation thread (in-app; email is only a ping).
+// Quotes are a revision history under each RFQ; the buyer accepts or negotiates.
+// ─────────────────────────────────────────────────────────────────────────
+
+export type QuoteStatus = 'sent' | 'superseded' | 'accepted' | 'withdrawn';
+
+export interface QuoteLineItem {
+  partNumber?: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface Quote {
+  id: string;
+  rfqNo: string;
+  revision: number;
+  currency: string;
+  lineItems: QuoteLineItem[];
+  subtotal: number;
+  total: number;
+  leadTime?: string;
+  validUntil?: string;
+  terms?: string;
+  notes?: string;
+  status: QuoteStatus;
+  createdByUid: string;
+  createdAt: number;
+}
+
+export type MessageRole = 'buyer' | 'admin';
+
+export interface RfqMessage {
+  id: string;
+  rfqNo: string;
+  senderUid: string;
+  senderRole: MessageRole;
+  senderName?: string;
+  body: string;
+  /** 'negotiate' for the buyer's opening negotiation message, else 'message'. */
+  kind?: 'message' | 'negotiate';
+  createdAt: number;
 }
