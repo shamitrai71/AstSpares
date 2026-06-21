@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { listRfqs, setRfqStatus } from '@/lib/db';
+import { getPurchaseOrder } from '@/lib/orders';
 import { useAuth } from '@/components/AuthProvider';
 import { QuoteBuilder } from '@/components/QuoteBuilder';
 import { QuoteThread } from '@/components/QuoteThread';
-import type { RfqDoc, RfqStatus } from '@/lib/types';
+import { OnlinePoForm } from '@/components/OnlinePoForm';
+import { PoView } from '@/components/PoView';
+import type { PurchaseOrder, RfqDoc, RfqStatus } from '@/lib/types';
 
 const STATUSES: RfqStatus[] = ['Pending', 'Quoted', 'Negotiating', 'Won', 'Lost'];
 
@@ -100,6 +103,13 @@ export default function AdminRfqs() {
                     bump={bump}
                     onChanged={load}
                   />
+
+                  {r.status === 'Won' && (
+                    <div className="mt-4 border-t border-paper-line pt-4">
+                      <p className="field-label">Purchase order</p>
+                      <AdminPoSection rfq={r} adminUid={adminUid} onChanged={load} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -108,4 +118,24 @@ export default function AdminRfqs() {
       )}
     </div>
   );
+}
+
+function AdminPoSection({ rfq, adminUid, onChanged }: { rfq: RfqDoc; adminUid: string; onChanged: () => void }) {
+  const [po, setPo] = useState<PurchaseOrder | null>(null);
+  const [loading, setLoading] = useState(Boolean(rfq.poNumber));
+
+  useEffect(() => {
+    if (rfq.poNumber) {
+      setLoading(true);
+      getPurchaseOrder(rfq.poNumber).then(setPo).catch(() => setPo(null)).finally(() => setLoading(false));
+    } else {
+      setPo(null);
+    }
+  }, [rfq.poNumber]);
+
+  if (rfq.poNumber) {
+    if (loading) return <p className="mt-2 text-sm text-petroleum-300">Loading PO…</p>;
+    return po ? <div className="mt-2"><PoView po={po} /></div> : <p className="mt-2 text-sm text-petroleum-300">PO {rfq.poNumber}.</p>;
+  }
+  return <OnlinePoForm rfq={rfq} adminUid={adminUid} onIssued={onChanged} />;
 }

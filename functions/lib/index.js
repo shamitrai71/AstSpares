@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mintSequence = exports.onRfqCreated = void 0;
+exports.onMessageCreated = exports.onQuoteCreated = exports.mintSequence = exports.onRfqCreated = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -47,6 +47,8 @@ const RESEND_API_KEY = (0, params_1.defineSecret)('RESEND_API_KEY');
 // and the verified From address on your Resend domain.
 const SALES_EMAIL = process.env.SALES_EMAIL || 'sales@astspares.com';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'ASTSPARES <rfq@astspares.com>';
+// Base URL for the deep links in notification emails (no trailing slash).
+const APP_URL = process.env.APP_URL || 'https://astspares.web.app';
 function itemRows(items) {
     return items
         .map((i) => `
@@ -161,4 +163,95 @@ exports.mintSequence = (0, https_1.onCall)({ region: 'asia-south1' }, async (req
         return next;
     });
     return { id: formatSeq(name, seq, year), seq };
+});
+function pingEmail(opts) {
+    return `
+  <div style="font-family:system-ui,sans-serif;color:#0E1C24;max-width:520px">
+    <h2 style="margin:0 0 8px">${opts.heading}</h2>
+    <p style="color:#5C6B73;margin:0 0 16px">${opts.body}</p>
+    <p style="margin:0 0 20px">
+      <a href="${opts.href}" style="display:inline-block;background:#EE6C2B;color:#fff;
+         text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600">${opts.cta}</a>
+    </p>
+    <p style="color:#5C6B73;font-size:13px">ASTSPARES — storage-tank &amp; terminal spares. No pricing is shared by email.</p>
+  </div>`;
+}
+async function getRfq(rfqNo) {
+    const snap = await admin.firestore().doc(`rfqs/${rfqNo}`).get();
+    if (!snap.exists)
+        return null;
+    const data = snap.data();
+    return { rfqNo, ...data };
+}
+// Quote posted → tell the buyer to review it in their account.
+exports.onQuoteCreated = (0, firestore_1.onDocumentCreated)({ document: 'rfqs/{rfqNo}/quotes/{quoteId}', secrets: [RESEND_API_KEY], region: 'asia-south1' }, async (event) => {
+    const rfqNo = event.params.rfqNo;
+    const rfq = await getRfq(rfqNo);
+    if (!rfq || rfq.channel !== 'online' || !rfq.contact?.email)
+        return;
+    const resend = new resend_1.Resend(RESEND_API_KEY.value());
+    try {
+        await resend.emails.send({
+            from: FROM_EMAIL,
+            to: rfq.contact.email,
+            subject: `Your budgetary quote for ${rfqNo} is ready`,
+            html: pingEmail({
+                heading: 'Your quote is ready',
+                body: `We've posted a budgetary quote for <strong>${rfqNo}</strong>. Review the line items and lead time in your account, then accept or negotiate.`,
+                cta: 'View your quote',
+                href: `${APP_URL}/account/`,
+            }),
+        });
+        firebase_functions_1.logger.info(`Quote notification sent for ${rfqNo}`);
+    }
+    catch (err) {
+        firebase_functions_1.logger.error(`Failed to send quote notification for ${rfqNo}`, err);
+    }
+});
+// New negotiation message → ping the other party.
+exports.onMessageCreated = (0, firestore_1.onDocumentCreated)({ document: 'rfqs/{rfqNo}/messages/{msgId}', secrets: [RESEND_API_KEY], region: 'asia-south1' }, async (event) => {
+    const snap = event.data;
+    if (!snap)
+        return;
+    const msg = snap.data();
+    const rfqNo = event.params.rfqNo;
+    const rfq = await getRfq(rfqNo);
+    if (!rfq || rfq.channel !== 'online' || !rfq.contact?.email)
+        return;
+    const resend = new resend_1.Resend(RESEND_API_KEY.value());
+    try {
+        if (msg.senderRole === 'buyer') {
+            // Buyer wrote → notify sales.
+            await resend.emails.send({
+                from: FROM_EMAIL,
+                to: SALES_EMAIL,
+                reply_to: rfq.contact.email,
+                subject: `Negotiation on ${rfqNo} — ${rfq.contact.company}`,
+                html: pingEmail({
+                    heading: `New message on ${rfqNo}`,
+                    body: `${rfq.contact.name} at ${rfq.contact.company} sent a negotiation message. Open the RFQ to reply or post a revised quote.`,
+                    cta: 'Open RFQ',
+                    href: `${APP_URL}/admin/rfqs/`,
+                }),
+            });
+        }
+        else {
+            // Admin replied → notify the buyer.
+            await resend.emails.send({
+                from: FROM_EMAIL,
+                to: rfq.contact.email,
+                subject: `ASTSPARES replied on ${rfqNo}`,
+                html: pingEmail({
+                    heading: 'You have a new message',
+                    body: `Our team replied on your request <strong>${rfqNo}</strong>. View the conversation and the latest quote in your account.`,
+                    cta: 'Open in your account',
+                    href: `${APP_URL}/account/`,
+                }),
+            });
+        }
+        firebase_functions_1.logger.info(`Message notification sent for ${rfqNo} (${msg.senderRole})`);
+    }
+    catch (err) {
+        firebase_functions_1.logger.error(`Failed to send message notification for ${rfqNo}`, err);
+    }
 });

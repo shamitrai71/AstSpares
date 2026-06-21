@@ -184,6 +184,12 @@ export interface RfqDoc {
   /** Set when the buyer accepts a quote. */
   acceptedQuoteId?: string;
   acceptedAt?: number;
+  /** The buyer's uploaded PO document (private Storage). */
+  buyerPoDocUrl?: string;
+  buyerPoDocPath?: string;
+  buyerPoUploadedAt?: number;
+  /** Set once the admin issues the structured PO for this RFQ. */
+  poNumber?: string;
   createdAt: number;
   notifiedAt?: number;
 }

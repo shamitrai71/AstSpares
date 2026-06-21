@@ -7,10 +7,12 @@ import { auth } from '@/lib/firebase';
 import { BuyerGate } from '@/components/BuyerGate';
 import { useAuth } from '@/components/AuthProvider';
 import { QuoteThread } from '@/components/QuoteThread';
+import { PoView } from '@/components/PoView';
 import { updateBuyerProfile } from '@/lib/buyers';
 import { listMyRfqs } from '@/lib/quotes';
+import { getPurchaseOrder, recordBuyerPoUpload } from '@/lib/orders';
 import { COUNTRIES } from '@/lib/countries';
-import type { RfqDoc } from '@/lib/types';
+import type { PurchaseOrder, RfqDoc } from '@/lib/types';
 
 export default function AccountPage() {
   return (
@@ -229,10 +231,63 @@ function MyRequests() {
                     rfqStatus={r.status}
                     onChanged={load}
                   />
+                  {r.status === 'Won' && <BuyerPoSection rfq={r} onChanged={load} />}
                 </div>
               )}
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BuyerPoSection({ rfq, onChanged }: { rfq: RfqDoc; onChanged: () => void }) {
+  const [po, setPo] = useState<PurchaseOrder | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (rfq.poNumber) getPurchaseOrder(rfq.poNumber).then(setPo).catch(() => setPo(null));
+  }, [rfq.poNumber]);
+
+  const upload = async () => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      await recordBuyerPoUpload(rfq.rfqNo, file);
+      setFile(null);
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 border-t border-paper-line pt-4">
+      <p className="field-label">Purchase order</p>
+
+      {/* Upload */}
+      {rfq.buyerPoDocUrl ? (
+        <p className="mt-1 text-sm text-petroleum-300">
+          ✓ Your PO document is uploaded —{' '}
+          <a href={rfq.buyerPoDocUrl} target="_blank" rel="noopener noreferrer" className="text-safety-600 underline">view</a>.
+        </p>
+      ) : (
+        <div className="mt-1">
+          <p className="text-sm text-petroleum-300">Upload your purchase order (PDF or image), or send it to us and we’ll attach it.</p>
+          <div className="mt-2 flex items-center gap-2">
+            <input type="file" accept=".pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block text-sm text-petroleum-300" />
+            <button onClick={upload} disabled={!file || busy} className="btn-ghost shrink-0">{busy ? 'Uploading…' : 'Upload'}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Issued PO */}
+      {po && (
+        <div className="mt-3">
+          <p className="mb-1 text-xs text-petroleum-300">Confirmed order:</p>
+          <PoView po={po} />
         </div>
       )}
     </div>
