@@ -8,6 +8,7 @@ import {
   listCategories,
 } from '@/lib/db';
 import type { Category, ProductDoc, SpecRow } from '@/lib/types';
+import { optimizeCloudinaryUrl } from '@/lib/images';
 
 function slugify(s: string): string {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -136,7 +137,7 @@ export default function AdminProducts() {
         family: codeFor(categories, p.categoryId),
         features: p.features.map((f) => f.trim()).filter(Boolean),
         compatibleEquipment: p.compatibleEquipment.map((f) => f.trim()).filter(Boolean),
-        images: p.images.map((f) => f.trim()).filter(Boolean),
+        images: p.images.map((f) => optimizeCloudinaryUrl(f)).filter(Boolean),
         specs: p.specs.filter((s) => s.label.trim() || s.value.trim()),
         datasheets: p.datasheets.filter((d) => d.url.trim()),
         tags: (p.tags ?? []).map((t) => t.trim()).filter(Boolean),
@@ -275,9 +276,13 @@ export default function AdminProducts() {
             onChange={(v) => setField('images', v)}
             mono
           />
+          <p className="-mt-2 text-xs text-petroleum-300">
+            Paste raw Cloudinary URLs — on save they’re auto-optimized to 4:3, 1200px, modern format.
+            URLs that already include a transformation are left as-is.
+          </p>
           {p.images[0] && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.images[0].trim()} alt="" className="h-28 w-28 rounded-tag border border-paper-line object-cover" />
+            <img src={optimizeCloudinaryUrl(p.images[0])} alt="" className="h-28 w-28 rounded-tag border border-paper-line object-cover" />
           )}
 
           <LinesField label="Features (one per line)" value={p.features} onChange={(v) => setField('features', v)} />
