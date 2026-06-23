@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAdminAuth } from '@/lib/useAdminAuth';
+import { PublishButton } from '@/components/PublishButton';
 
 const TABS = [
   { href: '/admin/', label: 'Dashboard' },
@@ -56,6 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm text-petroleum-300">
+          <PublishButton />
           <span className="hidden sm:inline">{user.email}</span>
           <button onClick={() => signOut(auth)} className="btn-ghost px-3 py-1.5">Sign out</button>
         </div>

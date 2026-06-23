@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onMessageCreated = exports.onQuoteCreated = exports.mintSequence = exports.onRfqCreated = void 0;
+exports.publishCatalog = exports.onMessageCreated = exports.onQuoteCreated = exports.mintSequence = exports.onRfqCreated = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -254,4 +254,58 @@ exports.onMessageCreated = (0, firestore_1.onDocumentCreated)({ document: 'rfqs/
     catch (err) {
         firebase_functions_1.logger.error(`Failed to send message notification for ${rfqNo}`, err);
     }
+});
+// ─────────────────────────────────────────────────────────────────────────
+// publishCatalog — one-click rebuild of the static catalog.
+//
+// The public catalog is a static export built from a Firestore snapshot, so
+// content edits in the admin (products, images, categories, landing) only go
+// live after a Cloud Build run. This callable (admin-only) kicks off the
+// existing build trigger via the Cloud Build REST API, authenticating with the
+// function's own service-account token from the metadata server — no key, no
+// extra npm dependency.
+//
+// The runtime service account needs the Cloud Build Editor role
+// (roles/cloudbuild.builds.editor).
+// ─────────────────────────────────────────────────────────────────────────
+const BUILD_TRIGGER = process.env.BUILD_TRIGGER || 'astspares-deploy';
+const BUILD_BRANCH = process.env.BUILD_BRANCH || 'main';
+exports.publishCatalog = (0, https_1.onCall)({ region: 'asia-south1' }, async (request) => {
+    if (!request.auth)
+        throw new https_1.HttpsError('unauthenticated', 'You must be signed in.');
+    const isAdmin = (await admin.firestore().doc(`admins/${request.auth.uid}`).get()).exists;
+    if (!isAdmin)
+        throw new https_1.HttpsError('permission-denied', 'Admins only.');
+    const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'astspares';
+    // Access token for the function's own service account.
+    let token;
+    try {
+        const r = await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token', { headers: { 'Metadata-Flavor': 'Google' } });
+        const body = (await r.json());
+        if (!r.ok || !body.access_token)
+            throw new Error(`metadata ${r.status}`);
+        token = body.access_token;
+    }
+    catch (err) {
+        firebase_functions_1.logger.error('publishCatalog: could not obtain access token', err);
+        throw new https_1.HttpsError('internal', 'Could not authenticate the build request.');
+    }
+    // Run the existing build trigger on the configured branch.
+    const url = `https://cloudbuild.googleapis.com/v1/projects/${project}/triggers/${BUILD_TRIGGER}:run`;
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branchName: BUILD_BRANCH }),
+    });
+    if (!res.ok) {
+        const text = await res.text();
+        firebase_functions_1.logger.error(`publishCatalog: trigger run failed (${res.status})`, text);
+        if (res.status === 403)
+            throw new https_1.HttpsError('permission-denied', 'The build service account is missing Cloud Build permissions.');
+        if (res.status === 404)
+            throw new https_1.HttpsError('not-found', `Build trigger "${BUILD_TRIGGER}" not found.`);
+        throw new https_1.HttpsError('internal', 'Failed to start the build.');
+    }
+    firebase_functions_1.logger.info(`publishCatalog: build triggered by ${request.auth.uid}`);
+    return { ok: true };
 });

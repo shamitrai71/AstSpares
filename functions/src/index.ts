@@ -291,3 +291,61 @@ export const onMessageCreated = onDocumentCreated(
     }
   },
 );
+
+// ─────────────────────────────────────────────────────────────────────────
+// publishCatalog — one-click rebuild of the static catalog.
+//
+// The public catalog is a static export built from a Firestore snapshot, so
+// content edits in the admin (products, images, categories, landing) only go
+// live after a Cloud Build run. This callable (admin-only) kicks off the
+// existing build trigger via the Cloud Build REST API, authenticating with the
+// function's own service-account token from the metadata server — no key, no
+// extra npm dependency.
+//
+// The runtime service account needs the Cloud Build Editor role
+// (roles/cloudbuild.builds.editor).
+// ─────────────────────────────────────────────────────────────────────────
+const BUILD_TRIGGER = process.env.BUILD_TRIGGER || 'astspares-deploy';
+const BUILD_BRANCH = process.env.BUILD_BRANCH || 'main';
+
+export const publishCatalog = onCall({ region: 'asia-south1' }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'You must be signed in.');
+  const isAdmin = (await admin.firestore().doc(`admins/${request.auth.uid}`).get()).exists;
+  if (!isAdmin) throw new HttpsError('permission-denied', 'Admins only.');
+
+  const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'astspares';
+
+  // Access token for the function's own service account.
+  let token: string;
+  try {
+    const r = await fetch(
+      'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token',
+      { headers: { 'Metadata-Flavor': 'Google' } },
+    );
+    const body = (await r.json()) as { access_token?: string };
+    if (!r.ok || !body.access_token) throw new Error(`metadata ${r.status}`);
+    token = body.access_token;
+  } catch (err) {
+    logger.error('publishCatalog: could not obtain access token', err);
+    throw new HttpsError('internal', 'Could not authenticate the build request.');
+  }
+
+  // Run the existing build trigger on the configured branch.
+  const url = `https://cloudbuild.googleapis.com/v1/projects/${project}/triggers/${BUILD_TRIGGER}:run`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ branchName: BUILD_BRANCH }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    logger.error(`publishCatalog: trigger run failed (${res.status})`, text);
+    if (res.status === 403) throw new HttpsError('permission-denied', 'The build service account is missing Cloud Build permissions.');
+    if (res.status === 404) throw new HttpsError('not-found', `Build trigger "${BUILD_TRIGGER}" not found.`);
+    throw new HttpsError('internal', 'Failed to start the build.');
+  }
+
+  logger.info(`publishCatalog: build triggered by ${request.auth.uid}`);
+  return { ok: true };
+});
