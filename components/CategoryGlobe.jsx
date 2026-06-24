@@ -165,9 +165,32 @@ export default function CategoryGlobe({
     scene.add(new THREE.AmbientLight(0x6a7c86, 0.8));
     const sun = new THREE.DirectionalLight(0xfff4e0, 1.15); sun.position.set(7, 4, 9); scene.add(sun);
 
-    const planetTex = new THREE.TextureLoader().load(mapSrc); planetTex.encoding = THREE.sRGBEncoding;
-    const planet = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R, 96, 96),
-      new THREE.MeshStandardMaterial({ map: planetTex, color: 0x9fb38a, roughness: 1, metalness: 0 }));
+    // Recolour the two-tone world map at runtime: ocean -> bright deep blue,
+    // land -> brighter golden yellow. Tweak OCEAN_COLOR / LAND_COLOR to taste.
+    const OCEAN_COLOR = [0x0b, 0x5f, 0xd9];   // #0B5FD9 bright, deep blue
+    const LAND_COLOR  = [0xe3, 0xb0, 0x28];   // #E3B028 brighter golden yellow
+    const planetMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0 });
+    const planet = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R, 96, 96), planetMat);
+    (() => {
+      const img = new Image();
+      img.onload = () => {
+        const cw = img.naturalWidth, ch = img.naturalHeight;
+        const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+        const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0);
+        const id = cx.getImageData(0, 0, cw, ch), p = id.data;
+        for (let i = 0; i < p.length; i += 4) {
+          // ocean pixels are blue-dominant (b>g); land is green/olive (g>b)
+          const c = p[i + 2] > p[i + 1] ? OCEAN_COLOR : LAND_COLOR;
+          p[i] = c[0]; p[i + 1] = c[1]; p[i + 2] = c[2];
+        }
+        cx.putImageData(id, 0, 0);
+        const tex = new THREE.CanvasTexture(cv);
+        tex.encoding = THREE.sRGBEncoding;
+        try { tex.anisotropy = renderer.capabilities.getMaxAnisotropy(); } catch (e) { /* noop */ }
+        planetMat.map = tex; planetMat.needsUpdate = true;
+      };
+      img.src = mapSrc;
+    })();
     group.add(planet);
 
     // hub brand marker
@@ -273,7 +296,22 @@ export default function CategoryGlobe({
     dom.addEventListener('pointerup', onUp);
     dom.addEventListener('pointerleave', onLeave);
 
-    function resize() { const w = mount.clientWidth || innerWidth, h = mount.clientHeight || innerHeight; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+    // Fit the whole tile orbit within the viewport on any aspect ratio by
+    // pushing the camera back as needed — keeps the globe inside the borders
+    // on desktop and stops it overflowing on narrow / mobile screens.
+    const FIT_R = TILE_R + 1.6;
+    function resize() {
+      const w = mount.clientWidth || innerWidth, h = mount.clientHeight || innerHeight;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      const tanV = Math.tan((camera.fov * Math.PI / 180) / 2);
+      const tanH = tanV * camera.aspect;
+      let dist = Math.max(FIT_R / tanV, FIT_R / tanH) * 1.1;
+      dist = Math.max(dist, 16);
+      camera.position.set(0, 0, dist);
+      camera.updateProjectionMatrix();
+      if (scene.fog) { scene.fog.near = dist; scene.fog.far = dist + 20; }
+    }
     addEventListener('resize', resize); resize();
 
     const clock = new THREE.Clock(); let raf;
