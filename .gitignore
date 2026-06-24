@@ -1,0 +1,9 @@
+﻿node_modules/
+functions/node_modules/
+.next/
+out/
+functions/lib/
+.env
+.env.*
+service-account.json
+.DS_Store
