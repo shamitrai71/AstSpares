@@ -51,6 +51,7 @@ export default function CategoryGlobe({
   const cats = categories.map((c, i) => ({
     raw: c,
     name: c.name || c.title || c.label || c.id || `Category ${i + 1}`,
+    code: (c.code || c.codePrefix || '').toString().toUpperCase(),
     color: c.color || PALETTE[i % PALETTE.length],
     glyph: c.glyph || guessGlyph(c.name || c.title || ''),
     std: c.std || c.standard || c.standards || '',
@@ -114,14 +115,23 @@ export default function CategoryGlobe({
       lines.forEach((ln, i) => ctx.fillText(ln, cx, startY + i * lh));
     }
     function tileTexture(c) {
-      const s = 256, cv = document.createElement('canvas'); cv.width = cv.height = s; const x = cv.getContext('2d');
-      const g = x.createLinearGradient(0, 0, s, s); g.addColorStop(0, shade(c.color, 22)); g.addColorStop(1, shade(c.color, -30));
-      x.fillStyle = g; x.fillRect(0, 0, s, s);
-      x.strokeStyle = 'rgba(255,255,255,.22)'; x.lineWidth = s * .018; x.strokeRect(s * .06, s * .06, s * .88, s * .88);
-      drawGlyph(x, c.glyph, s / 2, s * 0.35, s * 0.155);
-      x.fillStyle = '#fff'; x.textAlign = 'center'; x.font = `700 ${s * .10}px ui-sans-serif,system-ui,sans-serif`;
-      wrapText(x, c.name.toUpperCase(), s / 2, s * 0.66, s * 0.84, s * .125);
-      if (c.std) { x.fillStyle = 'rgba(255,255,255,.8)'; x.font = `${s * .052}px ui-sans-serif,system-ui,sans-serif`; x.fillText(c.std, s / 2, s * 0.9); }
+      const W = 320, H = 160, pad = 8, r = 16;
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
+      // Dark panel matching the Mumbai marker, with a thin family-colour keyline.
+      x.fillStyle = 'rgba(8,42,49,.94)';
+      x.beginPath(); x.roundRect(pad, pad, W - 2 * pad, H - 2 * pad, r); x.fill();
+      x.lineWidth = 3; x.strokeStyle = c.color || '#E8742F';
+      x.beginPath(); x.roundRect(pad, pad, W - 2 * pad, H - 2 * pad, r); x.stroke();
+      x.textAlign = 'center';
+      // Category name (uppercase, wraps to fit).
+      x.fillStyle = '#F4EEE3'; x.font = `700 27px ui-sans-serif,system-ui,sans-serif`;
+      wrapText(x, c.name.toUpperCase(), W / 2, H * 0.40, W - 36, 31);
+      // Part-number prefix, e.g. AST-RS.
+      if (c.code) {
+        x.fillStyle = c.color || '#E8742F';
+        x.font = `800 30px ui-monospace,SFMono-Regular,Menlo,monospace`;
+        x.fillText('AST-' + c.code, W / 2, H - 26);
+      }
       const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; t.encoding = THREE.sRGBEncoding; return t;
     }
     function dotTex(ring) {
@@ -243,9 +253,9 @@ export default function CategoryGlobe({
       const phi = Math.acos(1 - 2 * (i + 0.5) / Math.max(cats.length, 1));
       const theta = Math.PI * (1 + Math.sqrt(5)) * i;
       const x = TILE_R * Math.sin(phi) * Math.cos(theta), y = TILE_R * Math.cos(phi), z = TILE_R * Math.sin(phi) * Math.sin(theta);
-      const tile = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 2.3), new THREE.MeshBasicMaterial({ map: tileTexture(c), transparent: true }));
+      const tile = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), new THREE.MeshBasicMaterial({ map: tileTexture(c), transparent: true }));
       tile.position.set(x, y, z); tile.lookAt(x * 2, y * 2, z * 2); tile.userData = { cat: c.raw };
-      const frame = new THREE.Mesh(new THREE.PlaneGeometry(2.64, 2.64), new THREE.MeshBasicMaterial({ color: 0xD65210 }));
+      const frame = new THREE.Mesh(new THREE.PlaneGeometry(2.54, 1.34), new THREE.MeshBasicMaterial({ color: 0xD65210 }));
       frame.position.z = -0.06; frame.visible = false; frame.raycast = () => {}; tile.add(frame); tile.userData.frame = frame;
       group.add(tile); tiles.push(tile);
     });
