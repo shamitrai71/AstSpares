@@ -316,7 +316,8 @@ export default function CategoryGlobe({
       camera.aspect = w / h;
       const tanV = Math.tan((camera.fov * Math.PI / 180) / 2);
       const tanH = tanV * camera.aspect;
-      let dist = Math.max(FIT_R / tanV, FIT_R / tanH) * 1.1;
+      // 0.88 = 1.10 / 1.25 → globe ~25% larger than the snug fit, on every aspect.
+      let dist = Math.max(FIT_R / tanV, FIT_R / tanH) * 0.88;
       dist = Math.max(dist, 16);
       camera.position.set(0, 0, dist);
       camera.updateProjectionMatrix();
