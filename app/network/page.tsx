@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getTopLevelCategories } from '@/lib/catalog';
+import { getTopLevelCategories, getAllProducts } from '@/lib/catalog';
 import NetworkGlobe, { type GlobeFamily } from '@/components/NetworkGlobe';
 
 export const metadata: Metadata = {
@@ -8,33 +8,38 @@ export const metadata: Metadata = {
     'Explore ASTSPARES product families and our Mumbai-hub shipping network on an interactive 3D globe.',
 };
 
-// Pinned tile colour + glyph per family code, so tiles are deliberate and stay
-// stable regardless of how many families exist or their order. Add an entry
-// when you add a family; anything unmapped falls back to the renderer's palette
-// and name-inferred glyph. Colours are from the renderer's own palette.
-const FAMILY_STYLE: Record<string, { color: string; glyph: string }> = {
-  RS: { color: '#2A7F8E', glyph: 'seal' }, // Rim Seals — teal
-  FA: { color: '#B23A48', glyph: 'grid' }, // Flame Arrestors — red
-  PV: { color: '#6B8F3A', glyph: 'vent' }, // P/V Valves — green
-  HS: { color: '#5B8AC0', glyph: 'tube' }, // Hoses — blue
-  GK: { color: '#C7A06A', glyph: 'ring' }, // Gaskets — tan
+// Glyph per family for visual identity (unmapped families fall back to a
+// name-inferred glyph in the renderer).
+const FAMILY_GLYPH: Record<string, string> = {
+  RS: 'seal',
+  FA: 'grid',
+  PV: 'vent',
+  HS: 'tube',
+  GK: 'ring',
 };
+
+// Tile colour reflects catalogue coverage at build time:
+//   green  → the family already has products
+//   orange → defined but not yet populated (RFQ orange)
+const COLOR_POPULATED = '#2FC75A'; // green
+const COLOR_EMPTY = '#E8742F'; // RFQ orange
 
 // Build-time bake: the same top-level categories the catalog uses, so the globe
 // and the pages its tiles link to stay in sync and refresh together on Publish.
+// Coverage is computed from the product snapshot, so it updates on each build.
 export default function NetworkPage() {
-  const categories: GlobeFamily[] = getTopLevelCategories().map((c) => {
-    const style = c.code ? FAMILY_STYLE[c.code] : undefined;
-    return {
-      id: c.id,
-      slug: c.slug,
-      name: c.name,
-      code: c.code,
-      blurb: c.blurb,
-      route: `/products/${c.id.replace(/--/g, '/')}/`,
-      ...(style ?? {}),
-    };
-  });
+  const populated = new Set(getAllProducts().map((p) => p.family).filter(Boolean));
+
+  const categories: GlobeFamily[] = getTopLevelCategories().map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    name: c.name,
+    code: c.code,
+    blurb: c.blurb,
+    route: `/products/${c.id.replace(/--/g, '/')}/`,
+    glyph: c.code ? FAMILY_GLYPH[c.code] : undefined,
+    color: c.code && populated.has(c.code) ? COLOR_POPULATED : COLOR_EMPTY,
+  }));
 
   return <NetworkGlobe categories={categories} />;
 }
