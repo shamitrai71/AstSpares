@@ -39,6 +39,11 @@ export interface SpecRow {
 export interface ProductDoc {
   /** AST-RS-1001 — also the Firestore doc ID. */
   partNumber: string;
+  /** 'equipment' (a top-level catalogue item) or 'spare' (a part of an
+   *  equipment's BOM). Absent on legacy docs → treated as 'equipment'. */
+  kind?: 'equipment' | 'spare';
+  /** Spares only: the parent equipment's partNumber (its doc id). */
+  parentEquipmentId?: string;
   /** SEO slug, e.g. "primary-rim-seal-mechanical-shoe-ast-rs-1001" */
   slug: string;
   productName: string;

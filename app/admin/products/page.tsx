@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   listProducts,
   upsertProduct,
   deleteProduct,
   listCategories,
+  listSpares,
+  mintSpareNumber,
 } from '@/lib/db';
 import type { Category, ProductDoc, SpecRow } from '@/lib/types';
 import { optimizeCloudinaryUrl } from '@/lib/images';
@@ -49,6 +51,7 @@ function codeFor(categories: Category[], categoryId: string): string {
 
 const blankProduct = (): ProductDoc => ({
   partNumber: '',
+  kind: 'equipment',
   slug: '',
   productName: '',
   categoryId: '',
@@ -69,12 +72,39 @@ const blankProduct = (): ProductDoc => ({
   inStock: false,
 });
 
+/** A blank spare that inherits its parent equipment's category + family. */
+const blankSpare = (parent: ProductDoc): ProductDoc => ({
+  ...blankProduct(),
+  kind: 'spare',
+  parentEquipmentId: parent.partNumber,
+  categoryId: parent.categoryId,
+  family: parent.family,
+  manufacturer: '',
+});
+
+/** Normalises the array/text fields shared by equipment and spares on save. */
+function cleanFields(p: ProductDoc) {
+  return {
+    features: p.features.map((f) => f.trim()).filter(Boolean),
+    compatibleEquipment: p.compatibleEquipment.map((f) => f.trim()).filter(Boolean),
+    images: p.images.map((f) => optimizeCloudinaryUrl(f)).filter(Boolean),
+    specs: p.specs.filter((s) => s.label.trim() || s.value.trim()),
+    datasheets: p.datasheets.filter((d) => d.url.trim()),
+    tags: (p.tags ?? []).map((t) => t.trim()).filter(Boolean),
+    cataloguePdfUrl: (p.cataloguePdfUrl ?? '').trim(),
+    countryOfOrigin: (p.countryOfOrigin ?? '').trim(),
+    fulfilledBy: (p.fulfilledBy ?? '').trim(),
+  };
+}
+
 export default function AdminProducts() {
   const [products, setProducts] = useState<ProductDoc[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [draft, setDraft] = useState<{ product: ProductDoc; isNew: boolean } | null>(null);
+  const [draft, setDraft] = useState<{ product: ProductDoc; isNew: boolean; spareParent?: ProductDoc } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [openBom, setOpenBom] = useState<string | null>(null);
+  const [spares, setSpares] = useState<Record<string, ProductDoc[]>>({});
 
   const load = async () => {
     const [p, c] = await Promise.all([listProducts(), listCategories()]);
@@ -88,6 +118,24 @@ export default function AdminProducts() {
   const tree = useMemo(() => orderTree(categories), [categories]);
   const catName = (id: string) => categories.find((c) => c.id === id)?.name ?? id;
 
+  // Equipment may only attach to a leaf category (one with no sub-categories).
+  const leafIds = useMemo(() => {
+    const hasChild = new Set(categories.map((c) => c.parentId).filter(Boolean) as string[]);
+    return new Set(categories.filter((c) => !hasChild.has(c.id)).map((c) => c.id));
+  }, [categories]);
+
+  // The main list shows equipment only; spares live under their parent.
+  const equipment = useMemo(() => (products ?? []).filter((p) => p.kind !== 'spare'), [products]);
+
+  const loadSpares = async (parentId: string) => {
+    const s = await listSpares(parentId);
+    setSpares((m) => ({ ...m, [parentId]: s }));
+  };
+  const toggleBom = (parentId: string) => {
+    setOpenBom((cur) => (cur === parentId ? null : parentId));
+    if (!spares[parentId]) loadSpares(parentId).catch(() => {});
+  };
+
   const startNew = () => {
     setError('');
     setDraft({ product: blankProduct(), isNew: true });
@@ -95,6 +143,24 @@ export default function AdminProducts() {
   const startEdit = (p: ProductDoc) => {
     setError('');
     setDraft({ product: { ...p }, isNew: false });
+  };
+  const startNewSpare = (parent: ProductDoc) => {
+    setError('');
+    setDraft({ product: blankSpare(parent), isNew: true, spareParent: parent });
+  };
+  const startEditSpare = (sp: ProductDoc, parent: ProductDoc) => {
+    setError('');
+    setDraft({ product: { ...sp }, isNew: false, spareParent: parent });
+  };
+  const removeSpare = async (sp: ProductDoc) => {
+    if (!confirm(`Delete spare ${sp.partNumber} — ${sp.productName}?`)) return;
+    setBusy(true);
+    try {
+      await deleteProduct(sp.partNumber);
+      if (sp.parentEquipmentId) await loadSpares(sp.parentEquipmentId);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const setField = <K extends keyof ProductDoc>(key: K, value: ProductDoc[K]) => {
@@ -104,46 +170,69 @@ export default function AdminProducts() {
   const save = async () => {
     if (!draft) return;
     const p = draft.product;
-    const partNumber = p.partNumber.trim().toUpperCase();
-    if (!/^AST-[A-Z0-9]+-\d+$/.test(partNumber)) {
-      setError('Part number must look like AST-RS-1001 (AST-<code>-<number>).');
-      return;
-    }
+    const parent = draft.spareParent;
+
     if (!p.productName.trim()) {
       setError('Product name is required.');
       return;
     }
-    if (!p.categoryId) {
-      setError('Pick a category.');
-      return;
+
+    // Equipment-only checks; spares inherit category + family from the parent
+    // and have their number minted automatically.
+    if (!parent) {
+      const pn = p.partNumber.trim().toUpperCase();
+      if (!/^AST-[A-Z0-9]+-\d+$/.test(pn)) {
+        setError('Part number must look like AST-RS-00001 (AST-<code>-<number>).');
+        return;
+      }
+      if (!p.categoryId) {
+        setError('Pick a category.');
+        return;
+      }
+      if (!leafIds.has(p.categoryId)) {
+        setError('Equipment must sit on a leaf category (one with no sub-categories).');
+        return;
+      }
     }
+
     setBusy(true);
     setError('');
     try {
-      const slug = draft.isNew
-        ? `${slugify(p.productName)}-${partNumber.toLowerCase()}`
-        : p.slug || `${slugify(p.productName)}-${partNumber.toLowerCase()}`;
+      if (parent) {
+        // ── Spare ──
+        const partNumber = draft.isNew ? await mintSpareNumber(parent.partNumber) : p.partNumber;
+        const slug = p.slug || `${slugify(p.productName)}-${partNumber.toLowerCase()}`;
+        const record: ProductDoc = {
+          ...p,
+          kind: 'spare',
+          parentEquipmentId: parent.partNumber,
+          categoryId: parent.categoryId,
+          family: parent.family,
+          partNumber,
+          slug,
+          ...cleanFields(p),
+        };
+        await upsertProduct(record);
+        await Promise.all([load(), loadSpares(parent.partNumber)]);
+        setDraft(null);
+        return;
+      }
 
+      // ── Equipment ──
+      const partNumber = p.partNumber.trim().toUpperCase();
+      const slug = p.slug || `${slugify(p.productName)}-${partNumber.toLowerCase()}`;
       if (draft.isNew && products?.some((x) => x.partNumber === partNumber)) {
         setError(`Part number ${partNumber} already exists.`);
         setBusy(false);
         return;
       }
-
       const record: ProductDoc = {
         ...p,
+        kind: 'equipment',
         partNumber,
         slug,
         family: codeFor(categories, p.categoryId),
-        features: p.features.map((f) => f.trim()).filter(Boolean),
-        compatibleEquipment: p.compatibleEquipment.map((f) => f.trim()).filter(Boolean),
-        images: p.images.map((f) => optimizeCloudinaryUrl(f)).filter(Boolean),
-        specs: p.specs.filter((s) => s.label.trim() || s.value.trim()),
-        datasheets: p.datasheets.filter((d) => d.url.trim()),
-        tags: (p.tags ?? []).map((t) => t.trim()).filter(Boolean),
-        cataloguePdfUrl: (p.cataloguePdfUrl ?? '').trim(),
-        countryOfOrigin: (p.countryOfOrigin ?? '').trim(),
-        fulfilledBy: (p.fulfilledBy ?? '').trim(),
+        ...cleanFields(p),
       };
       await upsertProduct(record);
       await load();
@@ -179,54 +268,73 @@ export default function AdminProducts() {
     return (
       <div className="max-w-3xl">
         <div className="flex items-center justify-between">
-          <h1 className="font-display text-3xl">{draft.isNew ? 'New product' : `Edit ${p.partNumber}`}</h1>
+          <h1 className="font-display text-3xl">
+            {draft.spareParent
+              ? (draft.isNew ? `New spare · ${draft.spareParent.partNumber}` : `Edit ${p.partNumber}`)
+              : (draft.isNew ? 'New product' : `Edit ${p.partNumber}`)}
+          </h1>
           <button onClick={() => setDraft(null)} className="btn-ghost">Back to list</button>
         </div>
 
         <div className="mt-6 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="field-label">Category *</span>
-              <select
-                value={p.categoryId}
-                onChange={(e) => {
-                  const categoryId = e.target.value;
-                  const code = codeFor(categories, categoryId);
-                  setDraft((d) =>
-                    d
-                      ? {
-                          ...d,
-                          product: {
-                            ...d.product,
-                            categoryId,
-                            partNumber:
-                              d.isNew && !d.product.partNumber ? `AST-${code}-` : d.product.partNumber,
-                          },
-                        }
-                      : d,
-                  );
-                }}
-                className="field"
-              >
-                <option value="">— Select —</option>
-                {tree.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {'\u00A0'.repeat(c.depth * 2)}{c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="field-label">Part number * {!draft.isNew && '(locked)'}</span>
-              <input
-                value={p.partNumber}
-                disabled={!draft.isNew}
-                onChange={(e) => setField('partNumber', e.target.value)}
-                placeholder="AST-RS-1010"
-                className="field font-mono disabled:opacity-60"
-              />
-            </label>
-          </div>
+          {draft.spareParent ? (
+            <div className="rounded-tag border border-paper-line bg-paper-200 p-3">
+              <span className="field-label">Spare of</span>
+              <p className="mt-0.5 text-sm">
+                <span className="font-mono">{draft.spareParent.partNumber}</span> — {draft.spareParent.productName}
+              </p>
+              <p className="mt-1 font-mono text-xs text-petroleum-300">
+                {draft.isNew ? 'Number assigned on save (…-S###)' : p.partNumber}
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="field-label">Category *</span>
+                <select
+                  value={p.categoryId}
+                  onChange={(e) => {
+                    const categoryId = e.target.value;
+                    const code = codeFor(categories, categoryId);
+                    setDraft((d) =>
+                      d
+                        ? {
+                            ...d,
+                            product: {
+                              ...d.product,
+                              categoryId,
+                              partNumber:
+                                d.isNew && !d.product.partNumber ? `AST-${code}-` : d.product.partNumber,
+                            },
+                          }
+                        : d,
+                    );
+                  }}
+                  className="field"
+                >
+                  <option value="">— Select —</option>
+                  {tree.map((c) => (
+                    <option key={c.id} value={c.id} disabled={!leafIds.has(c.id)}>
+                      {'\u00A0'.repeat(c.depth * 2)}{c.name}{leafIds.has(c.id) ? '' : ' ›'}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1 block text-xs text-petroleum-300">
+                  Only leaf categories (no sub-categories) can hold equipment.
+                </span>
+              </label>
+              <label className="block">
+                <span className="field-label">Part number * {!draft.isNew && '(locked)'}</span>
+                <input
+                  value={p.partNumber}
+                  disabled={!draft.isNew}
+                  onChange={(e) => setField('partNumber', e.target.value)}
+                  placeholder="AST-RS-00001"
+                  className="field font-mono disabled:opacity-60"
+                />
+              </label>
+            </div>
+          )}
 
           <label className="block">
             <span className="field-label">Product name *</span>
@@ -329,13 +437,13 @@ export default function AdminProducts() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-3xl">Products</h1>
         <div className="flex items-center gap-4">
-          <p className="text-sm text-petroleum-300">{products.length} parts</p>
+          <p className="text-sm text-petroleum-300">{equipment.length} equipment</p>
           <button onClick={startNew} className="btn-primary">New product</button>
         </div>
       </div>
       <p className="mt-2 text-sm text-petroleum-300">Changes go live on the next publish.</p>
 
-      {products.length === 0 ? (
+      {equipment.length === 0 ? (
         <p className="mt-6 text-petroleum-300">No products yet. Add one, or run the seed.</p>
       ) : (
         <div className="mt-6 overflow-x-auto">
@@ -351,22 +459,57 @@ export default function AdminProducts() {
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
-                <tr key={p.partNumber} className="border-t border-paper-line">
-                  <td className="py-2 font-mono">{p.partNumber}</td>
-                  <td className="py-2">{p.productName}</td>
-                  <td className="py-2 text-petroleum-300">{catName(p.categoryId)}</td>
-                  <td className="py-2">
-                    <input type="checkbox" checked={p.inStock} onChange={(e) => quickPatch(p, { inStock: e.target.checked })} className="accent-safety" />
-                  </td>
-                  <td className="py-2">
-                    <input type="checkbox" checked={p.status === 'Active'} onChange={(e) => quickPatch(p, { status: e.target.checked ? 'Active' : 'Inactive' })} className="accent-safety" />
-                  </td>
-                  <td className="py-2 text-right">
-                    <button onClick={() => startEdit(p)} className="text-xs text-petroleum-300 underline hover:text-petroleum">Edit</button>
-                    <button onClick={() => remove(p)} className="ml-3 text-xs text-petroleum-300 underline hover:text-safety">Delete</button>
-                  </td>
-                </tr>
+              {equipment.map((p) => (
+                <Fragment key={p.partNumber}>
+                  <tr className="border-t border-paper-line">
+                    <td className="py-2 font-mono">{p.partNumber}</td>
+                    <td className="py-2">{p.productName}</td>
+                    <td className="py-2 text-petroleum-300">{catName(p.categoryId)}</td>
+                    <td className="py-2">
+                      <input type="checkbox" checked={p.inStock} onChange={(e) => quickPatch(p, { inStock: e.target.checked })} className="accent-safety" />
+                    </td>
+                    <td className="py-2">
+                      <input type="checkbox" checked={p.status === 'Active'} onChange={(e) => quickPatch(p, { status: e.target.checked ? 'Active' : 'Inactive' })} className="accent-safety" />
+                    </td>
+                    <td className="py-2 text-right whitespace-nowrap">
+                      <button onClick={() => toggleBom(p.partNumber)} className="text-xs text-petroleum-300 underline hover:text-petroleum">
+                        {openBom === p.partNumber ? 'Hide spares' : 'Spares'}
+                      </button>
+                      <button onClick={() => startEdit(p)} className="ml-3 text-xs text-petroleum-300 underline hover:text-petroleum">Edit</button>
+                      <button onClick={() => remove(p)} className="ml-3 text-xs text-petroleum-300 underline hover:text-safety">Delete</button>
+                    </td>
+                  </tr>
+                  {openBom === p.partNumber && (
+                    <tr className="border-t border-paper-line/60 bg-paper-200/60">
+                      <td colSpan={6} className="p-4">
+                        <div className="flex items-center justify-between">
+                          <p className="field-label">Spares · {p.partNumber}</p>
+                          <button onClick={() => startNewSpare(p)} className="btn-ghost px-3 py-1.5 text-sm">+ Add spare</button>
+                        </div>
+                        {spares[p.partNumber] === undefined ? (
+                          <p className="mt-2 text-sm text-petroleum-300">Loading…</p>
+                        ) : spares[p.partNumber].length === 0 ? (
+                          <p className="mt-2 text-sm text-petroleum-300">No spares yet for this equipment.</p>
+                        ) : (
+                          <ul className="mt-2 divide-y divide-paper-line">
+                            {spares[p.partNumber].map((sp) => (
+                              <li key={sp.partNumber} className="flex items-center justify-between py-1.5">
+                                <span className="text-sm">
+                                  <span className="font-mono">{sp.partNumber}</span>
+                                  <span className="ml-3 text-petroleum-300">{sp.productName}</span>
+                                </span>
+                                <span className="whitespace-nowrap">
+                                  <button onClick={() => startEditSpare(sp, p)} className="text-xs text-petroleum-300 underline hover:text-petroleum">Edit</button>
+                                  <button onClick={() => removeSpare(sp)} className="ml-3 text-xs text-petroleum-300 underline hover:text-safety">Delete</button>
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>

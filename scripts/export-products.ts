@@ -21,10 +21,14 @@ async function main() {
   const db = admin.firestore();
 
   const snap = await db.collection('products').orderBy('partNumber').get();
-  const products = snap.docs.map((d) => {
-    const { updatedAt, ...rest } = d.data();
-    return { ...rest, updatedAt: updatedAt ?? null };
-  });
+  const products = snap.docs
+    .map((d) => {
+      const { updatedAt, ...rest } = d.data();
+      return { ...rest, updatedAt: updatedAt ?? null };
+    })
+    // Spares (BOM items) are managed in the admin and shown at runtime, not
+    // baked into the static catalog. Keep the snapshot equipment-only.
+    .filter((p) => (p as { kind?: string }).kind !== 'spare');
 
   const out = resolve(process.cwd(), 'data', 'products.json');
   writeFileSync(out, JSON.stringify(products, null, 2) + '\n');

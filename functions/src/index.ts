@@ -133,7 +133,7 @@ export const onRfqCreated = onDocumentCreated(
 //   po       AST-PO-<year>-#####   (counter resets per year; admin-only)
 // Returns { id, seq }.
 // ─────────────────────────────────────────────────────────────────────────
-type SeqName = 'company' | 'buyer' | 'po';
+type SeqName = 'company' | 'buyer' | 'po' | 'spare';
 
 function formatSeq(name: SeqName, n: number, year: number): string {
   const pad = (v: number) => String(v).padStart(5, '0');
@@ -147,21 +147,31 @@ export const mintSequence = onCall({ region: 'asia-south1' }, async (request) =>
     throw new HttpsError('unauthenticated', 'You must be signed in.');
   }
   const name = String(request.data?.name ?? '') as SeqName;
-  if (name !== 'company' && name !== 'buyer' && name !== 'po') {
+  if (name !== 'company' && name !== 'buyer' && name !== 'po' && name !== 'spare') {
     throw new HttpsError('invalid-argument', `Unknown sequence "${name}".`);
   }
 
   const db = admin.firestore();
 
-  // PO numbers are issued only by admins.
-  if (name === 'po') {
+  // PO and spare numbers are issued only by admins.
+  if (name === 'po' || name === 'spare') {
     const isAdmin = (await db.doc(`admins/${request.auth.uid}`).get()).exists;
     if (!isAdmin) throw new HttpsError('permission-denied', 'Admins only.');
   }
 
+  // Spare numbers are scoped to a parent equipment number, e.g. AST-RS-00001.
+  let parent = '';
+  if (name === 'spare') {
+    parent = String(request.data?.parent ?? '').trim().toUpperCase();
+    if (!/^AST-[A-Z0-9]+-\d+$/.test(parent)) {
+      throw new HttpsError('invalid-argument', 'A valid parent equipment number is required.');
+    }
+  }
+
   const year = new Date().getFullYear();
-  // PO resets yearly → per-year counter doc; others are a single running counter.
-  const counterId = name === 'po' ? `po-${year}` : name;
+  // PO resets yearly; spare counts per equipment; others are a single counter.
+  const counterId =
+    name === 'po' ? `po-${year}` : name === 'spare' ? `spare-${parent}` : name;
   const ref = db.doc(`counters/${counterId}`);
 
   const seq = await db.runTransaction(async (tx) => {
@@ -172,7 +182,9 @@ export const mintSequence = onCall({ region: 'asia-south1' }, async (request) =>
     return next;
   });
 
-  return { id: formatSeq(name, seq, year), seq };
+  const id =
+    name === 'spare' ? `${parent}-S${String(seq).padStart(3, '0')}` : formatSeq(name, seq, year);
+  return { id, seq };
 });
 
 // ─────────────────────────────────────────────────────────────────────────

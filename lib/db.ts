@@ -14,7 +14,8 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from './firebase';
 import type { Category, RfqContact, RfqDoc, RfqItem, RfqStatus, ProductDoc, SiteConfig } from './types';
 
 /**
@@ -141,6 +142,26 @@ export async function upsertProduct(product: ProductDoc): Promise<void> {
 
 export async function deleteProduct(partNumber: string): Promise<void> {
   await deleteDoc(doc(db, 'products', partNumber));
+}
+
+/** Spares (BOM) belonging to one equipment, oldest number first. */
+export async function listSpares(parentEquipmentId: string): Promise<ProductDoc[]> {
+  const snap = await getDocs(
+    query(collection(db, 'products'), where('parentEquipmentId', '==', parentEquipmentId)),
+  );
+  return snap.docs
+    .map((d) => d.data() as ProductDoc)
+    .sort((a, b) => a.partNumber.localeCompare(b.partNumber));
+}
+
+/** Mint the next spare number for an equipment, e.g. AST-RS-00001-S003. */
+export async function mintSpareNumber(parentEquipmentId: string): Promise<string> {
+  const fn = httpsCallable<{ name: string; parent: string }, { id: string; seq: number }>(
+    functions,
+    'mintSequence',
+  );
+  const res = await fn({ name: 'spare', parent: parentEquipmentId });
+  return res.data.id;
 }
 
 // ── Categories ─────────────────────────────────────────────────────────────
