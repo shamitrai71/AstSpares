@@ -245,6 +245,11 @@ export default function AdminProducts() {
   };
 
   const remove = async (p: ProductDoc) => {
+    const sp = await listSpares(p.partNumber);
+    if (sp.length > 0) {
+      alert(`${p.partNumber} has ${sp.length} spare${sp.length === 1 ? '' : 's'}. Delete its spares first (open “Spares” on this row).`);
+      return;
+    }
     if (!confirm(`Delete ${p.partNumber} — ${p.productName}?`)) return;
     setBusy(true);
     try {

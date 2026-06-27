@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { listCategories, upsertCategory, deleteCategory } from '@/lib/db';
+import { listCategories, upsertCategory, deleteCategory, countProductsInCategory } from '@/lib/db';
 import type { Category } from '@/lib/types';
 
 function slugify(s: string): string {
@@ -127,7 +127,12 @@ export default function AdminCategories() {
       alert('This category has sub-categories. Delete or move them first.');
       return;
     }
-    if (!confirm(`Delete "${c.name}"? Products still pointing at it will need reassigning.`)) return;
+    const n = await countProductsInCategory(c.id);
+    if (n > 0) {
+      alert(`This category still has ${n} product${n === 1 ? '' : 's'} pointing at it. Reassign or delete them first.`);
+      return;
+    }
+    if (!confirm(`Delete "${c.name}"?`)) return;
     setBusy(true);
     try {
       await deleteCategory(c.id);

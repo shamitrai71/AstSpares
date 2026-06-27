@@ -144,6 +144,14 @@ export async function deleteProduct(partNumber: string): Promise<void> {
   await deleteDoc(doc(db, 'products', partNumber));
 }
 
+/** How many products point at a category (used to guard category deletion). */
+export async function countProductsInCategory(categoryId: string): Promise<number> {
+  const snap = await getDocs(
+    query(collection(db, 'products'), where('categoryId', '==', categoryId)),
+  );
+  return snap.size;
+}
+
 /** Spares (BOM) belonging to one equipment, oldest number first. */
 export async function listSpares(parentEquipmentId: string): Promise<ProductDoc[]> {
   const snap = await getDocs(
