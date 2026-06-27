@@ -97,6 +97,51 @@ export type Channel = 'online' | 'offline';
 
 export type CompanyType = 'operator' | 'epc' | 'oem' | 'inspector' | 'other';
 
+// ── Vendors & sourcing (backend-only; never exported to the public catalog) ──
+
+export type VendorType = 'manufacturer' | 'distributor' | 'partner' | 'other';
+
+export interface Vendor {
+  /** AST-V-00001 — also the Firestore doc ID. */
+  id: string;
+  name: string;
+  type?: VendorType;
+  country?: string;
+  contactName?: string;
+  contactEmail?: string;
+  phone?: string;
+  defaultLeadTimeDays?: number;
+  notes?: string;
+  active: boolean;
+  createdBy?: string;
+  createdAt: number;
+  updatedAt?: number;
+}
+
+/** One vendor's offer to supply one catalogue item. An item may have several. */
+export interface VendorOffering {
+  /** Firestore auto-id — also the doc ID. */
+  id: string;
+  /** The product/spare partNumber this offering sources. */
+  itemPartNumber: string;
+  vendorId: string;
+  /** Denormalised for display. */
+  vendorName: string;
+  vendorPartNo?: string;
+  cost: number;
+  /** ISO 4217, per offering (vendors may quote in different currencies). */
+  currency: string;
+  leadTimeDays?: number;
+  /** Minimum order quantity. */
+  moq?: number;
+  stockQty?: number;
+  /** Admin-chosen default source for this item (at most one per item). */
+  isPreferred: boolean;
+  notes?: string;
+  createdAt: number;
+  updatedAt?: number;
+}
+
 export interface Company {
   /** AST-CO-00001 — also the Firestore doc ID. */
   id: string;

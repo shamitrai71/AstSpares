@@ -133,12 +133,13 @@ export const onRfqCreated = onDocumentCreated(
 //   po       AST-PO-<year>-#####   (counter resets per year; admin-only)
 // Returns { id, seq }.
 // ─────────────────────────────────────────────────────────────────────────
-type SeqName = 'company' | 'buyer' | 'po' | 'spare';
+type SeqName = 'company' | 'buyer' | 'po' | 'spare' | 'vendor';
 
 function formatSeq(name: SeqName, n: number, year: number): string {
   const pad = (v: number) => String(v).padStart(5, '0');
   if (name === 'company') return `AST-CO-${pad(n)}`;
   if (name === 'buyer') return `AST-BUY-${pad(n)}`;
+  if (name === 'vendor') return `AST-V-${pad(n)}`;
   return `AST-PO-${year}-${pad(n)}`;
 }
 
@@ -147,14 +148,14 @@ export const mintSequence = onCall({ region: 'asia-south1' }, async (request) =>
     throw new HttpsError('unauthenticated', 'You must be signed in.');
   }
   const name = String(request.data?.name ?? '') as SeqName;
-  if (name !== 'company' && name !== 'buyer' && name !== 'po' && name !== 'spare') {
+  if (name !== 'company' && name !== 'buyer' && name !== 'po' && name !== 'spare' && name !== 'vendor') {
     throw new HttpsError('invalid-argument', `Unknown sequence "${name}".`);
   }
 
   const db = admin.firestore();
 
-  // PO and spare numbers are issued only by admins.
-  if (name === 'po' || name === 'spare') {
+  // PO, spare and vendor numbers are issued only by admins.
+  if (name === 'po' || name === 'spare' || name === 'vendor') {
     const isAdmin = (await db.doc(`admins/${request.auth.uid}`).get()).exists;
     if (!isAdmin) throw new HttpsError('permission-denied', 'Admins only.');
   }

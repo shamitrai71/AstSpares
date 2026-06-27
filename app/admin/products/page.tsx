@@ -11,6 +11,7 @@ import {
 } from '@/lib/db';
 import type { Category, ProductDoc, SpecRow } from '@/lib/types';
 import { optimizeCloudinaryUrl } from '@/lib/images';
+import { SourcingPanel } from '@/components/SourcingPanel';
 
 function slugify(s: string): string {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -426,6 +427,14 @@ export default function AdminProducts() {
               className="field font-mono text-xs"
             />
           </label>
+
+          {draft.isNew ? (
+            <p className="text-xs text-petroleum-300">
+              Save this {draft.spareParent ? 'spare' : 'item'} first, then re-open it to add vendor sourcing.
+            </p>
+          ) : (
+            <SourcingPanel itemPartNumber={p.partNumber} />
+          )}
 
           {error && <p className="text-sm text-safety-600">{error}</p>}
           <div className="flex gap-2 pt-2">

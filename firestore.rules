@@ -20,6 +20,15 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Vendors & sourcing — backend only. No public read (cost/vendor data must
+    // never reach the client catalog); admin-only read + write.
+    match /vendors/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /vendorOfferings/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // Category tree — public read, admin write.
     match /categories/{categoryId} {
       allow read: if true;
