@@ -316,8 +316,10 @@ export default function CategoryGlobe({
       camera.aspect = w / h;
       const tanV = Math.tan((camera.fov * Math.PI / 180) / 2);
       const tanH = tanV * camera.aspect;
-      // 0.88 = 1.10 / 1.25 → globe ~25% larger than the snug fit, on every aspect.
-      let dist = Math.max(FIT_R / tanV, FIT_R / tanH) * 0.88;
+      // Globe size by device. Larger factor = camera further = smaller globe.
+      // Mobile keeps the bigger ~25% bump (0.88); desktop is a touch smaller (0.93).
+      const margin = w >= 768 ? 0.93 : 0.88;
+      let dist = Math.max(FIT_R / tanV, FIT_R / tanH) * margin;
       dist = Math.max(dist, 16);
       camera.position.set(0, 0, dist);
       camera.updateProjectionMatrix();
