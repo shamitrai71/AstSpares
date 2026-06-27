@@ -117,18 +117,20 @@ export default function CategoryGlobe({
     function tileTexture(c) {
       const W = 320, H = 160, pad = 8, r = 16;
       const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
-      // Dark panel matching the Mumbai marker, with a thin family-colour keyline.
-      x.fillStyle = 'rgba(8,42,49,.94)';
+      // Solid coverage-coloured panel: green = family has products, orange = empty.
+      const fill = c.color || '#E8742F';
+      x.fillStyle = fill;
       x.beginPath(); x.roundRect(pad, pad, W - 2 * pad, H - 2 * pad, r); x.fill();
-      x.lineWidth = 3; x.strokeStyle = c.color || '#E8742F';
+      // Subtle dark edge for definition against the globe.
+      x.lineWidth = 3; x.strokeStyle = 'rgba(8,37,43,.45)';
       x.beginPath(); x.roundRect(pad, pad, W - 2 * pad, H - 2 * pad, r); x.stroke();
       x.textAlign = 'center';
-      // Category name (uppercase, wraps to fit).
-      x.fillStyle = '#F4EEE3'; x.font = `700 27px ui-sans-serif,system-ui,sans-serif`;
+      // Category name (uppercase, wraps to fit) — dark ink for contrast on the fill.
+      x.fillStyle = '#082A31'; x.font = `700 27px ui-sans-serif,system-ui,sans-serif`;
       wrapText(x, c.name.toUpperCase(), W / 2, H * 0.40, W - 36, 31);
       // Part-number prefix, e.g. AST-RS.
       if (c.code) {
-        x.fillStyle = c.color || '#E8742F';
+        x.fillStyle = 'rgba(8,42,49,.80)';
         x.font = `800 30px ui-monospace,SFMono-Regular,Menlo,monospace`;
         x.fillText('AST-' + c.code, W / 2, H - 26);
       }
@@ -255,7 +257,7 @@ export default function CategoryGlobe({
       const x = TILE_R * Math.sin(phi) * Math.cos(theta), y = TILE_R * Math.cos(phi), z = TILE_R * Math.sin(phi) * Math.sin(theta);
       const tile = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), new THREE.MeshBasicMaterial({ map: tileTexture(c), transparent: true }));
       tile.position.set(x, y, z); tile.lookAt(x * 2, y * 2, z * 2); tile.userData = { cat: c.raw };
-      const frame = new THREE.Mesh(new THREE.PlaneGeometry(2.54, 1.34), new THREE.MeshBasicMaterial({ color: 0xD65210 }));
+      const frame = new THREE.Mesh(new THREE.PlaneGeometry(2.54, 1.34), new THREE.MeshBasicMaterial({ color: 0xF4EEE3 }));
       frame.position.z = -0.06; frame.visible = false; frame.raycast = () => {}; tile.add(frame); tile.userData.frame = frame;
       group.add(tile); tiles.push(tile);
     });
