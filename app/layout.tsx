@@ -6,7 +6,7 @@ import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
 import { RfqProvider } from '@/components/RfqProvider';
 import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+import { ConditionalFooter } from '@/components/ConditionalFooter';
 
 const display = Instrument_Serif({
   weight: '400',
@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <RfqProvider>
             <Header nav={nav} />
             <main className="min-h-[60vh]">{children}</main>
-            <Footer />
+            <ConditionalFooter />
           </RfqProvider>
         </AuthProvider>
       </body>

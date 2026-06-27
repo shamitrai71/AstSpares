@@ -317,11 +317,15 @@ export default function CategoryGlobe({
       const tanV = Math.tan((camera.fov * Math.PI / 180) / 2);
       const tanH = tanV * camera.aspect;
       // Globe size by device. Larger factor = camera further = smaller globe.
-      // Mobile keeps the bigger ~25% bump (0.88); desktop is a touch smaller (0.93).
-      const margin = w >= 768 ? 0.93 : 0.88;
+      // Mobile keeps the bigger size (0.88); desktop is a little smaller (1.06).
+      const margin = w >= 768 ? 1.06 : 0.88;
       let dist = Math.max(FIT_R / tanV, FIT_R / tanH) * margin;
       dist = Math.max(dist, 16);
-      camera.position.set(0, 0, dist);
+      // Bias the globe toward the bottom using part of the spare vertical room
+      // (never enough to clip the lowest tile); camera up = globe down.
+      const headroom = Math.max(0, dist * tanV - FIT_R);
+      const yOffset = Math.min(headroom * 0.5, FIT_R * 0.12);
+      camera.position.set(0, yOffset, dist);
       camera.updateProjectionMatrix();
       if (scene.fog) { scene.fog.near = dist; scene.fog.far = dist + 20; }
     }
