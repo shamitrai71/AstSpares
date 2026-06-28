@@ -363,13 +363,20 @@ export default function CategoryGlobe({
     <div ref={mountRef} style={{ position: 'absolute', inset: 0, background: '#082A31', overflow: 'hidden' }}>
       <div ref={tipRef} style={{ position: 'fixed', zIndex: 25, pointerEvents: 'none', background: 'rgba(8,42,49,.92)', border: '1px solid rgba(244,238,227,.16)', color: '#F4EEE3', font: '12px ui-sans-serif,system-ui', padding: '5px 9px', borderRadius: 7, transform: 'translate(-50%,-160%)', opacity: 0, transition: 'opacity .12s', whiteSpace: 'nowrap' }} />
       {legendList.length > 0 && (
-        <aside style={{ position: 'absolute', zIndex: 18, left: 16, bottom: 16, width: 240, maxWidth: '46vw', background: 'rgba(8,42,49,.82)', border: '1px solid rgba(244,238,227,.16)', borderRadius: 12, backdropFilter: 'blur(6px)', overflow: 'hidden', color: '#F4EEE3', fontFamily: 'ui-sans-serif,system-ui' }}>
-          <h4 onClick={() => setLegendOpen((o) => !o)} style={{ margin: 0, padding: '11px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, font: '600 11px ui-sans-serif,system-ui', letterSpacing: '.16em', textTransform: 'uppercase', color: 'rgba(244,238,227,.62)' }}>
-            From {hub.name} · <b style={{ color: '#E8742F' }}>{dests.length}</b> destinations
-            <span style={{ marginLeft: 'auto', opacity: .6 }}>{legendOpen ? '▴' : '▾'}</span>
-          </h4>
+        <aside style={{ position: 'absolute', zIndex: 18, left: 14, bottom: 14, width: 'auto', maxWidth: 'min(280px, 78vw)', background: 'rgba(8,42,49,.82)', border: '1px solid rgba(244,238,227,.16)', borderRadius: 14, backdropFilter: 'blur(6px)', overflow: 'hidden', color: '#F4EEE3', fontFamily: 'ui-sans-serif,system-ui' }}>
+          <button onClick={() => setLegendOpen((o) => !o)} style={{ width: '100%', textAlign: 'left', background: 'none', border: 0, color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px' }}>
+            <span style={{ position: 'relative', flex: '0 0 auto', width: 10, height: 10 }}>
+              <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#2FC75A' }} />
+              <span style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: '1px solid rgba(47,199,90,.5)' }} />
+            </span>
+            <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25, minWidth: 0 }}>
+              <span style={{ font: '600 9px ui-sans-serif,system-ui', letterSpacing: '.18em', textTransform: 'uppercase', color: 'rgba(244,238,227,.55)' }}>Shipping from</span>
+              <span style={{ font: '600 13px ui-sans-serif,system-ui' }}>{hub.name} · <b style={{ color: '#E8742F' }}>{dests.length}</b> destinations</span>
+            </span>
+            <span style={{ marginLeft: 'auto', paddingLeft: 6, opacity: .6, fontSize: 11, flex: '0 0 auto' }}>{legendOpen ? '▴' : '▾'}</span>
+          </button>
           {legendOpen && (
-            <div style={{ padding: '0 14px 12px', columns: 2, columnGap: 14, fontSize: 11.5, color: 'rgba(244,238,227,.82)', maxHeight: '34vh', overflow: 'auto' }}>
+            <div style={{ padding: '2px 13px 12px', columns: 2, columnGap: 14, fontSize: 11.5, color: 'rgba(244,238,227,.82)', maxHeight: '34vh', overflow: 'auto' }}>
               {legendList.map((d) => (
                 <div key={d.name} style={{ breakInside: 'avoid', padding: '2px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <i style={{ width: 6, height: 6, borderRadius: '50%', background: d.serviceable ? '#2FC75A' : '#D65210', flex: '0 0 auto' }} />{d.name}
