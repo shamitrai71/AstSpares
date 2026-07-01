@@ -6,6 +6,7 @@
 // components/ and is lazy-imported here.
 
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ComponentType } from 'react';
 import { SHIPPING_DESTINATIONS, type ShippingDestination } from '@/lib/network';
@@ -37,15 +38,52 @@ const CategoryGlobe = dynamic(() => import('@/components/CategoryGlobe'), {
   ssr: false,
 }) as unknown as ComponentType<GlobeProps>;
 
-export default function NetworkGlobe({ categories }: { categories: GlobeFamily[] }) {
+export default function NetworkGlobe({
+  categories,
+  cta,
+}: {
+  categories: GlobeFamily[];
+  cta?: { href: string; label: string };
+}) {
   const router = useRouter();
   return (
-    <CategoryGlobe
-      categories={categories}
-      destinations={SHIPPING_DESTINATIONS}
-      hub={{ name: 'Mumbai', lat: 19.07, lon: 72.87 }}
-      mapSrc="/world.jpg"
-      onCategoryClick={(c) => router.push(c.route)}
-    />
+    <>
+      <CategoryGlobe
+        categories={categories}
+        destinations={SHIPPING_DESTINATIONS}
+        hub={{ name: 'Mumbai', lat: 19.07, lon: 72.87 }}
+        mapSrc="/world.jpg"
+        onCategoryClick={(c) => router.push(c.route)}
+      />
+      {cta && (
+        <Link
+          href={cta.href}
+          style={{
+            position: 'fixed',
+            left: '50%',
+            bottom: 26,
+            transform: 'translateX(-50%)',
+            zIndex: 30,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '13px 30px',
+            borderRadius: 999,
+            background: '#D65210',
+            color: '#F4EEE3',
+            fontFamily: 'ui-sans-serif,system-ui',
+            fontWeight: 600,
+            fontSize: 14,
+            letterSpacing: '.1em',
+            textTransform: 'uppercase',
+            textDecoration: 'none',
+            boxShadow: '0 8px 24px rgba(0,0,0,.4)',
+          }}
+        >
+          {cta.label}
+          <span aria-hidden style={{ fontSize: 16, lineHeight: 1 }}>→</span>
+        </Link>
+      )}
+    </>
   );
 }

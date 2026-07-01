@@ -27,7 +27,7 @@ export function Header({ nav = [] }: { nav?: NavItem[] }) {
     <>
       <header className="sticky top-0 z-30 border-b border-paper-line bg-paper/85 backdrop-blur">
         <div className="shell flex h-16 items-center gap-4">
-          <Link href="/" className="flex items-baseline gap-2">
+          <Link href="/home" className="flex items-baseline gap-2">
             <span className="font-display text-2xl leading-none text-petroleum">ASTSPARES</span>
             <span className="hidden font-mono text-[10px] uppercase tracking-eyebrow text-safety sm:inline">
               tank &amp; terminal spares

@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const nav = [{ href: '/products/', label: 'Catalog' }];
+  const nav = [{ href: '/products/', label: 'Catalog' }, { href: '/', label: 'Network' }];
   return (
     <html lang="en" className={`${display.variable} ${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
