@@ -61,7 +61,7 @@ export default function NetworkGlobe({
           style={{
             position: 'fixed',
             left: '50%',
-            bottom: 26,
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 74px)',
             transform: 'translateX(-50%)',
             zIndex: 30,
             display: 'inline-flex',

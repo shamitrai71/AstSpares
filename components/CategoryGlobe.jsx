@@ -360,7 +360,7 @@ export default function CategoryGlobe({
   const legendList = [...dests].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div ref={mountRef} style={{ position: 'absolute', inset: 0, background: '#082A31', overflow: 'hidden' }}>
+    <div ref={mountRef} style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#082A31', overflow: 'hidden' }}>
       <div ref={tipRef} style={{ position: 'fixed', zIndex: 25, pointerEvents: 'none', background: 'rgba(8,42,49,.92)', border: '1px solid rgba(244,238,227,.16)', color: '#F4EEE3', font: '12px ui-sans-serif,system-ui', padding: '5px 9px', borderRadius: 7, transform: 'translate(-50%,-160%)', opacity: 0, transition: 'opacity .12s', whiteSpace: 'nowrap' }} />
       {legendList.length > 0 && (
         <aside style={{ position: 'absolute', zIndex: 18, left: 14, bottom: 14, width: 'auto', maxWidth: 'min(280px, 78vw)', background: 'rgba(8,42,49,.82)', border: '1px solid rgba(244,238,227,.16)', borderRadius: 14, backdropFilter: 'blur(6px)', overflow: 'hidden', color: '#F4EEE3', fontFamily: 'ui-sans-serif,system-ui' }}>

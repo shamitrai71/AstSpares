@@ -34,6 +34,18 @@ export function Header({ nav = [] }: { nav?: NavItem[] }) {
             </span>
           </Link>
 
+          <Link
+            href="/"
+            aria-label="View the network globe"
+            className="-ml-1 flex h-8 w-8 items-center justify-center rounded-full text-petroleum-300 transition-colors hover:text-safety"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3 12h18" />
+              <path d="M12 3c2.6 2.7 3.9 5.7 3.9 9s-1.3 6.3-3.9 9c-2.6-2.7-3.9-5.7-3.9-9S9.4 5.7 12 3z" />
+            </svg>
+          </Link>
+
           <div className="ml-auto hidden items-center gap-1 lg:flex">
             {nav.map((n) => (
               <Link
