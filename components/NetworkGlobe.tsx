@@ -58,10 +58,10 @@ export default function NetworkGlobe({
       {cta && (
         <Link
           href={cta.href}
+          className="bottom-[74px] lg:bottom-[28px]"
           style={{
             position: 'fixed',
             left: '50%',
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 74px)',
             transform: 'translateX(-50%)',
             zIndex: 30,
             display: 'inline-flex',

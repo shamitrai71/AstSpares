@@ -37,7 +37,7 @@ export function Header({ nav = [] }: { nav?: NavItem[] }) {
           <Link
             href="/"
             aria-label="View the network globe"
-            className="-ml-1 flex h-8 w-8 items-center justify-center rounded-full text-petroleum-300 transition-colors hover:text-safety"
+            className="-ml-1 flex h-8 w-8 items-center justify-center rounded-full text-petroleum-300 transition-colors hover:text-safety lg:hidden"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="9" />
