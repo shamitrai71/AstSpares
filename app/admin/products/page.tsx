@@ -101,7 +101,7 @@ function cleanFields(p: ProductDoc) {
 export default function AdminProducts() {
   const [products, setProducts] = useState<ProductDoc[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [draft, setDraft] = useState<{ product: ProductDoc; isNew: boolean; spareParent?: ProductDoc } | null>(null);
+  const [draft, setDraft] = useState<{ product: ProductDoc; isNew: boolean; spareParent?: ProductDoc; originalCategoryId?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [openBom, setOpenBom] = useState<string | null>(null);
@@ -143,7 +143,7 @@ export default function AdminProducts() {
   };
   const startEdit = (p: ProductDoc) => {
     setError('');
-    setDraft({ product: { ...p }, isNew: false });
+    setDraft({ product: { ...p }, isNew: false, originalCategoryId: p.categoryId });
   };
   const startNewSpare = (parent: ProductDoc) => {
     setError('');
@@ -190,7 +190,11 @@ export default function AdminProducts() {
         setError('Pick a category.');
         return;
       }
-      if (!leafIds.has(p.categoryId)) {
+      // Enforce leaf-only when assigning a category — but grandfather an
+      // existing product already sitting on a (now non-leaf) category, so you
+      // can still edit it (e.g. change its image) without being forced to refile.
+      const categoryChanged = draft.isNew || p.categoryId !== draft.originalCategoryId;
+      if (categoryChanged && !leafIds.has(p.categoryId)) {
         setError('Equipment must sit on a leaf category (one with no sub-categories).');
         return;
       }
