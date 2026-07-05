@@ -11,15 +11,8 @@ import {
 } from '@/lib/buyers';
 import { COUNTRIES } from '@/lib/countries';
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currencies';
+import { COMPANY_TYPE_OPTIONS, DEFAULT_COMPANY_TYPE } from '@/lib/company';
 import type { Company, CompanyLocation, CompanyType } from '@/lib/types';
-
-const COMPANY_TYPES: { value: CompanyType; label: string }[] = [
-  { value: 'operator', label: 'Tank / terminal operator' },
-  { value: 'epc', label: 'EPC contractor' },
-  { value: 'oem', label: 'OEM / manufacturer' },
-  { value: 'inspector', label: 'Inspector / consultant' },
-  { value: 'other', label: 'Other' },
-];
 
 export function Onboarding() {
   const { user, refreshBuyer } = useAuth();
@@ -39,7 +32,7 @@ export function Onboarding() {
   const [addingCompany, setAddingCompany] = useState(false);
   const [newCompany, setNewCompany] = useState<{ name: string; type: CompanyType; currency: string }>({
     name: '',
-    type: 'operator',
+    type: DEFAULT_COMPANY_TYPE,
     currency: DEFAULT_CURRENCY,
   });
 
@@ -239,8 +232,8 @@ export function Onboarding() {
                     onChange={(e) => setNewCompany({ ...newCompany, type: e.target.value as CompanyType })}
                     className="field"
                   >
-                    {COMPANY_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
+                    {COMPANY_TYPE_OPTIONS.map((t) => (
+                      <option key={t.code} value={t.code}>
                         {t.label}
                       </option>
                     ))}

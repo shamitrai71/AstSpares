@@ -97,7 +97,16 @@ export interface Inventory {
 
 export type Channel = 'online' | 'offline';
 
-export type CompanyType = 'operator' | 'epc' | 'oem' | 'inspector' | 'other';
+export type CompanyType =
+  | 'refinery'
+  | 'epc'
+  | 'terminal'
+  | 'port'
+  | 'trader'
+  | 'agent'
+  | 'inspection'
+  | 'consultant'
+  | 'other';
 
 // ── Vendors & sourcing (backend-only; never exported to the public catalog) ──
 

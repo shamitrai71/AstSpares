@@ -14,6 +14,7 @@ import { COUNTRIES } from '@/lib/countries';
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currencies';
 import { DEFAULT_UOM } from '@/lib/uom';
 import { useAuth } from '@/components/AuthProvider';
+import { COMPANY_TYPE_OPTIONS, DEFAULT_COMPANY_TYPE } from '@/lib/company';
 import type { Buyer, Company, CompanyLocation, CompanyType, PoStatus } from '@/lib/types';
 
 type Line = { partNumber: string; description: string; quantity: number; uom: string; unitPrice: number };
@@ -41,7 +42,7 @@ export default function AdminOffline() {
   const [contact, setContact] = useState({ name: '', email: '', phone: '', countryIso: '', designation: '', department: '' });
   const [companyMode, setCompanyMode] = useState<'existing' | 'new'>('existing');
   const [companyId, setCompanyId] = useState('');
-  const [newCompany, setNewCompany] = useState<{ name: string; type: CompanyType; currency: string }>({ name: '', type: 'operator', currency: DEFAULT_CURRENCY });
+  const [newCompany, setNewCompany] = useState<{ name: string; type: CompanyType; currency: string }>({ name: '', type: DEFAULT_COMPANY_TYPE, currency: DEFAULT_CURRENCY });
   const [locations, setLocations] = useState<CompanyLocation[]>([]);
   const [locationId, setLocationId] = useState('');
   const [newLocation, setNewLocation] = useState({ name: '', city: '' });
@@ -291,7 +292,7 @@ export default function AdminOffline() {
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <input value={newCompany.name} onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })} placeholder="Company name" className="field col-span-2" />
                   <select value={newCompany.type} onChange={(e) => setNewCompany({ ...newCompany, type: e.target.value as CompanyType })} className="field">
-                    {(['operator', 'epc', 'oem', 'inspector', 'other'] as CompanyType[]).map((t) => <option key={t} value={t}>{t}</option>)}
+                    {COMPANY_TYPE_OPTIONS.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)}
                   </select>
                   <select value={newCompany.currency} onChange={(e) => setNewCompany({ ...newCompany, currency: e.target.value })} className="field">
                     {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}

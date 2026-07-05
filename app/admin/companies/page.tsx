@@ -13,9 +13,8 @@ import {
 import { COUNTRIES } from '@/lib/countries';
 import { CURRENCIES } from '@/lib/currencies';
 import { useAuth } from '@/components/AuthProvider';
+import { COMPANY_TYPE_OPTIONS, DEFAULT_COMPANY_TYPE, companyTypeLabel } from '@/lib/company';
 import type { Company, CompanyLocation, CompanyType } from '@/lib/types';
-
-const TYPES: CompanyType[] = ['operator', 'epc', 'oem', 'inspector', 'other'];
 
 export default function AdminCompanies() {
   const { user } = useAuth();
@@ -65,7 +64,7 @@ export default function AdminCompanies() {
                 {!c.verified && <span className="eyebrow text-safety-600">unverified</span>}
               </div>
               <p className="mt-0.5 text-xs text-petroleum-300">
-                {c.id} · {c.type ?? '—'} · {c.country ?? '—'} · {c.defaultCurrency ?? 'no currency'}
+                {c.id} · {companyTypeLabel(c.type)} · {c.country ?? '—'} · {c.defaultCurrency ?? 'no currency'}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3 text-sm">
@@ -90,7 +89,7 @@ function CompanyEditor({
   onSaved: () => void;
 }) {
   const [name, setName] = useState(company.name);
-  const [type, setType] = useState<CompanyType>(company.type ?? 'operator');
+  const [type, setType] = useState<CompanyType>(company.type ?? DEFAULT_COMPANY_TYPE);
   const [country, setCountry] = useState(company.country ?? '');
   const [currency, setCurrency] = useState(company.defaultCurrency ?? '');
   const [verified, setVerified] = useState(company.verified);
@@ -151,7 +150,8 @@ function CompanyEditor({
         <label className="block">
           <span className="field-label">Type</span>
           <select value={type} onChange={(e) => setType(e.target.value as CompanyType)} className="field">
-            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {!COMPANY_TYPE_OPTIONS.some((o) => o.code === type) && <option value={type}>{companyTypeLabel(type)}</option>}
+            {COMPANY_TYPE_OPTIONS.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)}
           </select>
         </label>
         <label className="block">
@@ -220,7 +220,7 @@ function CompanyCreator({
   onSaved: () => void;
 }) {
   const [name, setName] = useState('');
-  const [type, setType] = useState<CompanyType>('operator');
+  const [type, setType] = useState<CompanyType>(DEFAULT_COMPANY_TYPE);
   const [country, setCountry] = useState('');
   const [currency, setCurrency] = useState('');
   const [busy, setBusy] = useState(false);
@@ -254,7 +254,8 @@ function CompanyCreator({
         <label className="block">
           <span className="field-label">Type</span>
           <select value={type} onChange={(e) => setType(e.target.value as CompanyType)} className="field">
-            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {!COMPANY_TYPE_OPTIONS.some((o) => o.code === type) && <option value={type}>{companyTypeLabel(type)}</option>}
+            {COMPANY_TYPE_OPTIONS.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)}
           </select>
         </label>
         <label className="block">

@@ -13,6 +13,7 @@ import {
 import { COUNTRIES } from '@/lib/countries';
 import { CURRENCIES } from '@/lib/currencies';
 import { useAuth } from '@/components/AuthProvider';
+import { COMPANY_TYPE_OPTIONS, DEFAULT_COMPANY_TYPE } from '@/lib/company';
 import type { Buyer, Company, CompanyType } from '@/lib/types';
 
 export default function AdminBuyers() {
@@ -119,7 +120,7 @@ function BuyerCreator({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   // Inline "new company" so the admin never has to leave this form.
   const [newCo, setNewCo] = useState(false);
   const [coName, setCoName] = useState('');
-  const [coType, setCoType] = useState<CompanyType>('operator');
+  const [coType, setCoType] = useState<CompanyType>(DEFAULT_COMPANY_TYPE);
   const [coCountry, setCoCountry] = useState('');
   const [coCurrency, setCoCurrency] = useState('');
   const [coBusy, setCoBusy] = useState(false);
@@ -231,7 +232,7 @@ function BuyerCreator({ onClose, onSaved }: { onClose: () => void; onSaved: () =
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <input placeholder="Company name *" value={coName} onChange={(e) => setCoName(e.target.value)} className="field" />
             <select value={coType} onChange={(e) => setCoType(e.target.value as CompanyType)} className="field">
-              {(['operator', 'epc', 'oem', 'inspector', 'other'] as CompanyType[]).map((t) => <option key={t} value={t}>{t}</option>)}
+              {COMPANY_TYPE_OPTIONS.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)}
             </select>
             <select value={coCountry} onChange={(e) => setCoCountry(e.target.value)} className="field">
               <option value="">Country —</option>
