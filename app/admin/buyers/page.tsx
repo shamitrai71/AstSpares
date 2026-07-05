@@ -8,8 +8,12 @@ import {
   setBuyerDisabled,
   deleteBuyerAccount,
   listCompanies,
+  createCompany,
 } from '@/lib/buyers';
-import type { Buyer, Company } from '@/lib/types';
+import { COUNTRIES } from '@/lib/countries';
+import { CURRENCIES } from '@/lib/currencies';
+import { useAuth } from '@/components/AuthProvider';
+import type { Buyer, Company, CompanyType } from '@/lib/types';
 
 export default function AdminBuyers() {
   const [buyers, setBuyers] = useState<Buyer[] | null>(null);
@@ -99,6 +103,7 @@ export default function AdminBuyers() {
 }
 
 function BuyerCreator({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const { user } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -111,7 +116,35 @@ function BuyerCreator({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  // Inline "new company" so the admin never has to leave this form.
+  const [newCo, setNewCo] = useState(false);
+  const [coName, setCoName] = useState('');
+  const [coType, setCoType] = useState<CompanyType>('operator');
+  const [coCountry, setCoCountry] = useState('');
+  const [coCurrency, setCoCurrency] = useState('');
+  const [coBusy, setCoBusy] = useState(false);
+
   useEffect(() => { listCompanies().then(setCompanies).catch(() => setCompanies([])); }, []);
+
+  const addCompany = async () => {
+    if (!coName.trim()) { setError('Company name is required.'); return; }
+    setCoBusy(true);
+    setError('');
+    try {
+      const c = await createCompany(
+        { name: coName.trim(), type: coType, country: coCountry || undefined, defaultCurrency: coCurrency || undefined },
+        user?.uid ?? '',
+      );
+      setCompanies((list) => [...list, c].sort((a, b) => a.name.localeCompare(b.name)));
+      setCompanyId(c.id);
+      setNewCo(false);
+      setCoName(''); setCoCountry(''); setCoCurrency('');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not create company.');
+    } finally {
+      setCoBusy(false);
+    }
+  };
 
   const save = async () => {
     const company = companies.find((c) => c.id === companyId);
@@ -149,10 +182,6 @@ function BuyerCreator({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         with the buyer; they can change it after signing in.
       </p>
 
-      {companies.length === 0 && (
-        <p className="mt-3 text-xs text-safety-600">No companies yet — add one under Companies first.</p>
-      )}
-
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="field-label">Email *</span>
@@ -168,10 +197,15 @@ function BuyerCreator({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         </label>
         <label className="block">
           <span className="field-label">Company *</span>
-          <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="field">
-            <option value="">— Select —</option>
-            {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <div className="flex gap-2">
+            <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="field flex-1">
+              <option value="">— Select —</option>
+              {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <button type="button" onClick={() => setNewCo((v) => !v)} className="btn-ghost whitespace-nowrap px-3">
+              {newCo ? 'Cancel' : '+ New'}
+            </button>
+          </div>
         </label>
         <label className="block">
           <span className="field-label">Phone</span>
@@ -191,10 +225,33 @@ function BuyerCreator({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         </label>
       </div>
 
+      {newCo && (
+        <div className="mt-3 rounded-tag border border-paper-line bg-paper-200/50 p-3">
+          <p className="field-label">New company</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <input placeholder="Company name *" value={coName} onChange={(e) => setCoName(e.target.value)} className="field" />
+            <select value={coType} onChange={(e) => setCoType(e.target.value as CompanyType)} className="field">
+              {(['operator', 'epc', 'oem', 'inspector', 'other'] as CompanyType[]).map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <select value={coCountry} onChange={(e) => setCoCountry(e.target.value)} className="field">
+              <option value="">Country —</option>
+              {COUNTRIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+            </select>
+            <select value={coCurrency} onChange={(e) => setCoCurrency(e.target.value)} className="field">
+              <option value="">Default currency —</option>
+              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+            </select>
+          </div>
+          <button onClick={addCompany} disabled={coBusy} className="btn-primary mt-3 px-3 py-1.5 text-sm">
+            {coBusy ? 'Adding…' : 'Add company'}
+          </button>
+        </div>
+      )}
+
       {error && <p className="mt-3 text-sm text-safety-600">{error}</p>}
 
       <div className="mt-5 flex gap-2">
-        <button onClick={save} disabled={busy || companies.length === 0} className="btn-primary">{busy ? 'Creating…' : 'Create buyer'}</button>
+        <button onClick={save} disabled={busy} className="btn-primary">{busy ? 'Creating…' : 'Create buyer'}</button>
         <button onClick={onClose} className="btn-ghost">Cancel</button>
       </div>
     </div>

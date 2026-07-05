@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
+  createCompany,
   createLocation,
   deleteCompany,
   deleteLocation,
@@ -20,17 +21,29 @@ export default function AdminCompanies() {
   const { user } = useAuth();
   const [companies, setCompanies] = useState<Company[] | null>(null);
   const [editing, setEditing] = useState<Company | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const load = () => listCompanies().then(setCompanies).catch(() => setCompanies([]));
   useEffect(() => { load(); }, []);
 
   return (
     <div>
-      <h1 className="font-display text-3xl">Companies</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-display text-3xl">Companies</h1>
+        <button onClick={() => { setEditing(null); setCreating(true); }} className="btn-primary">New company</button>
+      </div>
       <p className="mt-1 text-sm text-petroleum-300">
         The buyer master list. Buyer-added companies arrive <em>unverified</em> — confirm or correct
         them here, set the default currency, and manage each company’s sites.
       </p>
+
+      {creating && (
+        <CompanyCreator
+          adminUid={user?.uid ?? ''}
+          onClose={() => setCreating(false)}
+          onSaved={() => { setCreating(false); load(); }}
+        />
+      )}
 
       {editing && (
         <CompanyEditor
@@ -192,6 +205,77 @@ function CompanyEditor({
           <button onClick={onClose} className="btn-ghost">Cancel</button>
         </div>
         <button onClick={remove} disabled={busy} className="text-sm text-safety-600 underline">Delete company</button>
+      </div>
+    </div>
+  );
+}
+
+function CompanyCreator({
+  adminUid,
+  onClose,
+  onSaved,
+}: {
+  adminUid: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [type, setType] = useState<CompanyType>('operator');
+  const [country, setCountry] = useState('');
+  const [currency, setCurrency] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const save = async () => {
+    if (!name.trim()) { setError('Company name is required.'); return; }
+    setBusy(true);
+    setError('');
+    try {
+      await createCompany(
+        { name: name.trim(), type, country: country.trim() || undefined, defaultCurrency: currency || undefined },
+        adminUid,
+      );
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not create company.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="panel mt-6 p-5">
+      <h2 className="font-display text-2xl">New company</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="field-label">Name *</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} className="field" />
+        </label>
+        <label className="block">
+          <span className="field-label">Type</span>
+          <select value={type} onChange={(e) => setType(e.target.value as CompanyType)} className="field">
+            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </label>
+        <label className="block">
+          <span className="field-label">Country</span>
+          <select value={country} onChange={(e) => setCountry(e.target.value)} className="field">
+            <option value="">—</option>
+            {COUNTRIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+          </select>
+        </label>
+        <label className="block">
+          <span className="field-label">Default currency</span>
+          <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="field">
+            <option value="">—</option>
+            {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+          </select>
+        </label>
+      </div>
+      {error && <p className="mt-3 text-sm text-safety-600">{error}</p>}
+      <div className="mt-5 flex gap-2">
+        <button onClick={save} disabled={busy} className="btn-primary">{busy ? 'Creating…' : 'Create company'}</button>
+        <button onClick={onClose} className="btn-ghost">Cancel</button>
       </div>
     </div>
   );
