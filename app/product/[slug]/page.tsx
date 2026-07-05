@@ -129,6 +129,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               {product.inStock ? 'In stock' : 'Made to order'}
             </span>
             <span>Lead time ≈ {product.leadTimeWeeks} weeks</span>
+            {product.uom && <span>Unit: {product.uom}</span>}
             {product.countryOfOrigin && <span>Origin: {product.countryOfOrigin}</span>}
             {product.fulfilledBy && <span>Fulfilled by {product.fulfilledBy}</span>}
           </div>
@@ -147,7 +148,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           )}
 
           <div className="mt-7">
-            <AddToRfqButton partNumber={product.partNumber} productName={product.productName} />
+            <AddToRfqButton partNumber={product.partNumber} productName={product.productName} uom={product.uom} />
             <p className="mt-2 text-xs text-petroleum-300">
               Pricing on request — add to your RFQ and submit for a quote and confirmed lead time.
             </p>

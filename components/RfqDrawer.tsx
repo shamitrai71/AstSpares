@@ -66,7 +66,7 @@ export function RfqDrawer() {
                   </div>
                   <div className="mt-3 flex items-end gap-3">
                     <label className="w-20">
-                      <span className="field-label">Qty</span>
+                      <span className="field-label">Qty{item.uom ? ` ${item.uom}` : ''}</span>
                       <input
                         type="number"
                         min={1}

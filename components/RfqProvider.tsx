@@ -11,7 +11,7 @@ interface RfqContextValue {
   isOpen: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;
-  addItem: (item: { partNumber: string; productName: string; quantity?: number }) => void;
+  addItem: (item: { partNumber: string; productName: string; quantity?: number; uom?: string }) => void;
   removeItem: (partNumber: string) => void;
   updateItem: (partNumber: string, patch: Partial<RfqItem>) => void;
   clear: () => void;
@@ -46,7 +46,7 @@ export function RfqProvider({ children }: { children: React.ReactNode }) {
   }, [items, hydrated]);
 
   const value = useMemo<RfqContextValue>(() => {
-    const addItem: RfqContextValue['addItem'] = ({ partNumber, productName, quantity = 1 }) => {
+    const addItem: RfqContextValue['addItem'] = ({ partNumber, productName, quantity = 1, uom }) => {
       setItems((prev) => {
         const existing = prev.find((i) => i.partNumber === partNumber);
         if (existing) {
@@ -54,7 +54,7 @@ export function RfqProvider({ children }: { children: React.ReactNode }) {
             i.partNumber === partNumber ? { ...i, quantity: i.quantity + quantity } : i,
           );
         }
-        return [...prev, { partNumber, productName, quantity, requiredBy: null }];
+        return [...prev, { partNumber, productName, quantity, uom, requiredBy: null }];
       });
       setIsOpen(true);
     };

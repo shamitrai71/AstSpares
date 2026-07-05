@@ -6,9 +6,11 @@ import { useRfq } from './RfqProvider';
 export function AddToRfqButton({
   partNumber,
   productName,
+  uom,
 }: {
   partNumber: string;
   productName: string;
+  uom?: string;
 }) {
   const { addItem } = useRfq();
   const [qty, setQty] = useState(1);
@@ -39,8 +41,9 @@ export function AddToRfqButton({
           +
         </button>
       </div>
+      {uom && <span className="flex items-center px-1 font-mono text-xs text-petroleum-300">{uom}</span>}
       <button
-        onClick={() => addItem({ partNumber, productName, quantity: qty })}
+        onClick={() => addItem({ partNumber, productName, quantity: qty, uom })}
         className="btn-primary flex-1"
       >
         Add to RFQ

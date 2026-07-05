@@ -102,7 +102,7 @@ export function QuoteThread({
                       {l.partNumber && <span className="font-mono text-xs text-petroleum-300">{l.partNumber} · </span>}
                       {l.description}
                     </td>
-                    <td className="py-1.5 text-right text-petroleum-300">{l.quantity} ×</td>
+                    <td className="py-1.5 text-right text-petroleum-300">{l.quantity}{l.uom ? ` ${l.uom}` : ''} ×</td>
                     <td className="py-1.5 text-right">{money(q.currency, l.unitPrice)}</td>
                     <td className="py-1.5 text-right font-medium">{money(q.currency, l.lineTotal)}</td>
                   </tr>

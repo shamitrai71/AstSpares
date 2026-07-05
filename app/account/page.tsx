@@ -219,7 +219,7 @@ function MyRequests() {
                   <ul className="text-sm text-petroleum-300">
                     {r.items.map((it) => (
                       <li key={it.partNumber}>
-                        <span className="font-mono text-petroleum">{it.partNumber}</span> · {it.productName} × {it.quantity}
+                        <span className="font-mono text-petroleum">{it.partNumber}</span> · {it.productName} × {it.quantity}{it.uom ? ` ${it.uom}` : ''}
                       </li>
                     ))}
                   </ul>

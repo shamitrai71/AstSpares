@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { createQuote } from '@/lib/quotes';
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currencies';
+import { DEFAULT_UOM } from '@/lib/uom';
 import type { RfqDoc } from '@/lib/types';
 
-type Line = { partNumber: string; description: string; quantity: number; unitPrice: number };
+type Line = { partNumber: string; description: string; quantity: number; uom: string; unitPrice: number };
 
 export function QuoteBuilder({
   rfq,
@@ -25,6 +26,7 @@ export function QuoteBuilder({
       partNumber: it.partNumber === '—' ? '' : it.partNumber,
       description: it.productName,
       quantity: it.quantity,
+      uom: it.uom || DEFAULT_UOM,
       unitPrice: 0,
     })),
   );
@@ -50,6 +52,7 @@ export function QuoteBuilder({
             partNumber: l.partNumber || undefined,
             description: l.description,
             quantity: l.quantity,
+            uom: l.uom || undefined,
             unitPrice: l.unitPrice,
           })),
           leadTime,
@@ -87,12 +90,13 @@ export function QuoteBuilder({
         {lines.map((l, i) => (
           <div key={i} className="grid grid-cols-12 gap-2">
             <input value={l.partNumber} onChange={(e) => setLine(i, { partNumber: e.target.value })} placeholder="Part #" className="field col-span-3" />
-            <input value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} placeholder="Description" className="field col-span-5" />
+            <input value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} placeholder="Description" className="field col-span-4" />
             <input type="number" min={1} value={l.quantity} onChange={(e) => setLine(i, { quantity: Math.max(1, Number(e.target.value) || 1) })} className="field col-span-2" />
+            <input value={l.uom} onChange={(e) => setLine(i, { uom: e.target.value.toUpperCase() })} placeholder="UoM" className="field col-span-1 px-1 text-center text-xs" />
             <input type="number" min={0} step="0.01" value={l.unitPrice} onChange={(e) => setLine(i, { unitPrice: Number(e.target.value) || 0 })} placeholder="Unit" className="field col-span-2" />
           </div>
         ))}
-        <button onClick={() => setLines([...lines, { partNumber: '', description: '', quantity: 1, unitPrice: 0 }])} className="text-xs text-safety-600 underline">+ Add line</button>
+        <button onClick={() => setLines([...lines, { partNumber: '', description: '', quantity: 1, uom: DEFAULT_UOM, unitPrice: 0 }])} className="text-xs text-safety-600 underline">+ Add line</button>
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">

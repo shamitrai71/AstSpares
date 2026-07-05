@@ -12,11 +12,12 @@ import {
 import { createOfflineOrder } from '@/lib/orders';
 import { COUNTRIES } from '@/lib/countries';
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currencies';
+import { DEFAULT_UOM } from '@/lib/uom';
 import { useAuth } from '@/components/AuthProvider';
 import type { Buyer, Company, CompanyLocation, CompanyType, PoStatus } from '@/lib/types';
 
-type Line = { partNumber: string; description: string; quantity: number; unitPrice: number };
-const BLANK_LINE: Line = { partNumber: '', description: '', quantity: 1, unitPrice: 0 };
+type Line = { partNumber: string; description: string; quantity: number; uom: string; unitPrice: number };
+const BLANK_LINE: Line = { partNumber: '', description: '', quantity: 1, uom: DEFAULT_UOM, unitPrice: 0 };
 const PO_STATUSES: PoStatus[] = ['issued', 'acknowledged', 'fulfilled', 'closed', 'cancelled'];
 
 export default function AdminOffline() {
@@ -182,6 +183,7 @@ export default function AdminOffline() {
           partNumber: l.partNumber || undefined,
           description: l.description,
           quantity: l.quantity,
+          uom: l.uom || undefined,
           unitPrice: l.unitPrice,
         })),
         buyerPoNumber: po.buyerPoNumber || undefined,
@@ -319,7 +321,8 @@ export default function AdminOffline() {
           {lines.map((l, i) => (
             <div key={i} className="grid grid-cols-12 gap-2">
               <input value={l.partNumber} onChange={(e) => setLine(i, { partNumber: e.target.value })} placeholder="Part #" className="field col-span-3" />
-              <input value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} placeholder="Description *" className="field col-span-5" />
+              <input value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} placeholder="Description *" className="field col-span-4" />
+              <input value={l.uom} onChange={(e) => setLine(i, { uom: e.target.value.toUpperCase() })} placeholder="UoM" className="field col-span-1 px-1 text-center text-xs" />
               <input type="number" min={1} value={l.quantity} onChange={(e) => setLine(i, { quantity: Math.max(1, Number(e.target.value) || 1) })} placeholder="Qty" className="field col-span-2" />
               <input type="number" min={0} step="0.01" value={l.unitPrice} onChange={(e) => setLine(i, { unitPrice: Number(e.target.value) || 0 })} placeholder="Unit price" className="field col-span-2" />
             </div>

@@ -81,7 +81,7 @@ export default function AdminRfqs() {
                       {r.items.map((it) => (
                         <tr key={it.partNumber} className="border-t border-paper-line">
                           <td className="py-2 font-mono">{it.partNumber}</td>
-                          <td className="py-2">{it.quantity}</td>
+                          <td className="py-2">{it.quantity}{it.uom ? ` ${it.uom}` : ''}</td>
                           <td className="py-2">{it.requiredBy ?? '—'}</td>
                           <td className="py-2 text-petroleum-300">{it.note ?? '—'}</td>
                         </tr>

@@ -57,6 +57,8 @@ export interface ProductDoc {
   specs: SpecRow[];
   compatibleEquipment: string[];
   leadTimeWeeks: number;
+  /** Unit of measure the item is quantified/quoted in (EA, KG, M, SET, …). */
+  uom?: string;
   status: 'Active' | 'Inactive';
   /** Cloudinary (or any) image URLs. First entry is the primary thumbnail. */
   images: string[];
@@ -201,6 +203,8 @@ export interface RfqItem {
   partNumber: string;
   productName: string;
   quantity: number;
+  /** Unit of measure, denormalised from the product (EA, KG, M, …). */
+  uom?: string;
   /** ISO date string (yyyy-mm-dd) or null. */
   requiredBy: string | null;
   note?: string;
@@ -291,6 +295,7 @@ export interface PoLineItem {
   partNumber?: string;
   description: string;
   quantity: number;
+  uom?: string;
   unitPrice: number;
   lineTotal: number;
 }
@@ -338,6 +343,7 @@ export interface QuoteLineItem {
   partNumber?: string;
   description: string;
   quantity: number;
+  uom?: string;
   unitPrice: number;
   lineTotal: number;
 }

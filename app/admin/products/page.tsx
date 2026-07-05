@@ -11,6 +11,7 @@ import {
 } from '@/lib/db';
 import type { Category, ProductDoc, SpecRow } from '@/lib/types';
 import { optimizeCloudinaryUrl } from '@/lib/images';
+import { UOM_OPTIONS, DEFAULT_UOM } from '@/lib/uom';
 import { SourcingPanel } from '@/components/SourcingPanel';
 
 function slugify(s: string): string {
@@ -63,6 +64,7 @@ const blankProduct = (): ProductDoc => ({
   specs: [],
   compatibleEquipment: [],
   leadTimeWeeks: 6,
+  uom: DEFAULT_UOM,
   status: 'Active',
   images: [],
   datasheets: [],
@@ -359,6 +361,19 @@ export default function AdminProducts() {
             <label className="block">
               <span className="field-label">Lead time (weeks)</span>
               <input type="number" min={0} value={p.leadTimeWeeks} onChange={(e) => setField('leadTimeWeeks', Number(e.target.value))} className="field" />
+            </label>
+            <label className="block">
+              <span className="field-label">Unit of measure</span>
+              <input
+                list="uom-options"
+                value={p.uom ?? ''}
+                onChange={(e) => setField('uom', e.target.value.toUpperCase())}
+                placeholder={DEFAULT_UOM}
+                className="field"
+              />
+              <datalist id="uom-options">
+                {UOM_OPTIONS.map((u) => <option key={u.code} value={u.code}>{u.label}</option>)}
+              </datalist>
             </label>
             <div className="flex items-end gap-4">
               <label className="flex items-center gap-2 text-sm text-petroleum">

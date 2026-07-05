@@ -122,7 +122,7 @@ function RfqForm() {
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     <label>
-                      <span className="field-label">Quantity</span>
+                      <span className="field-label">Quantity{item.uom ? ` (${item.uom})` : ''}</span>
                       <input
                         type="number"
                         min={1}
