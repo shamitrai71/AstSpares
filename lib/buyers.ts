@@ -180,6 +180,35 @@ export async function updateBuyer(buyerId: string, patch: Partial<Buyer>): Promi
   await updateDoc(doc(db, 'buyers', buyerId), clean({ ...patch, updatedAt: Date.now() }) as Record<string, unknown>);
 }
 
+/** Admin-create a buyer WITH sign-in credentials (email + initial password). */
+export async function adminCreateBuyer(input: {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+  dialCode?: string;
+  country?: string;
+  designation?: string;
+  department?: string;
+  companyId: string;
+  companyName: string;
+}): Promise<{ id: string; uid: string }> {
+  const fn = httpsCallable<typeof input, { id: string; uid: string }>(functions, 'adminCreateBuyer');
+  return (await fn(input)).data;
+}
+
+/** Disable or re-enable a buyer's sign-in (number retained). */
+export async function setBuyerDisabled(buyerId: string, disabled: boolean): Promise<void> {
+  const fn = httpsCallable<{ buyerId: string; disabled: boolean }, { ok: boolean }>(functions, 'adminSetBuyerDisabled');
+  await fn({ buyerId, disabled });
+}
+
+/** Delete a buyer and its sign-in account (the buyer number is never reused). */
+export async function deleteBuyerAccount(buyerId: string): Promise<void> {
+  const fn = httpsCallable<{ buyerId: string }, { ok: boolean }>(functions, 'adminDeleteBuyer');
+  await fn({ buyerId });
+}
+
 /** Admin-created offline buyer (no auth uid, channel 'offline'). */
 export async function createOfflineBuyer(input: {
   adminUid: string;

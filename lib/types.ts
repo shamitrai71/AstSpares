@@ -190,6 +190,8 @@ export interface Buyer {
   channel: Channel;
   /** Admin-confirmed. */
   verified: boolean;
+  /** Sign-in disabled by an admin (account retained, number never reused). */
+  disabled?: boolean;
   createdBy?: string;
   createdAt: number;
   updatedAt?: number;

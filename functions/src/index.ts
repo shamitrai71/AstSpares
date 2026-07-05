@@ -362,3 +362,122 @@ export const publishCatalog = onCall({ region: 'asia-south1' }, async (request) 
   logger.info(`publishCatalog: build triggered by ${request.auth.uid}`);
   return { ok: true };
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// Admin buyer-account management.
+// Creating a buyer WITH sign-in credentials, or disabling/deleting one, needs
+// the Admin SDK (Firebase Auth), so these run server-side and are admin-only.
+// Buyer numbers share the same monotonic counter as mintSequence, so a deleted
+// buyer's number is retired, never reused.
+// ─────────────────────────────────────────────────────────────────────────
+async function requireAdmin(uid: string | undefined): Promise<string> {
+  if (!uid) throw new HttpsError('unauthenticated', 'You must be signed in.');
+  const isAdmin = (await admin.firestore().doc(`admins/${uid}`).get()).exists;
+  if (!isAdmin) throw new HttpsError('permission-denied', 'Admins only.');
+  return uid;
+}
+
+async function nextBuyerId(): Promise<string> {
+  const db = admin.firestore();
+  const ref = db.doc('counters/buyer');
+  const seq = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const current = snap.exists ? ((snap.data()?.seq as number) ?? 0) : 0;
+    const next = current + 1;
+    tx.set(ref, { seq: next, updatedAt: Date.now() }, { merge: true });
+    return next;
+  });
+  return `AST-BUY-${String(seq).padStart(5, '0')}`;
+}
+
+export const adminCreateBuyer = onCall({ region: 'asia-south1' }, async (request) => {
+  const adminUid = await requireAdmin(request.auth?.uid);
+  const d = (request.data ?? {}) as Record<string, unknown>;
+  const s = (k: string) => String(d[k] ?? '').trim();
+
+  const email = s('email').toLowerCase();
+  const password = String(d.password ?? '');
+  const name = s('name');
+  const companyId = s('companyId');
+  const companyName = s('companyName');
+
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new HttpsError('invalid-argument', 'A valid email is required.');
+  if (password.length < 6) throw new HttpsError('invalid-argument', 'Password must be at least 6 characters.');
+  if (!name) throw new HttpsError('invalid-argument', 'Name is required.');
+  if (!companyId || !companyName) throw new HttpsError('invalid-argument', 'A company is required.');
+
+  let user;
+  try {
+    user = await admin.auth().createUser({ email, password, displayName: name });
+  } catch (err) {
+    if ((err as { code?: string }).code === 'auth/email-already-exists') {
+      throw new HttpsError('already-exists', 'An account with that email already exists.');
+    }
+    logger.error('adminCreateBuyer: createUser failed', err);
+    throw new HttpsError('internal', 'Could not create the sign-in account.');
+  }
+
+  const id = await nextBuyerId();
+  const record: Record<string, unknown> = {
+    id,
+    uid: user.uid,
+    name,
+    email,
+    companyId,
+    companyName,
+    channel: 'offline',
+    verified: true,
+    disabled: false,
+    createdBy: adminUid,
+    createdAt: Date.now(),
+  };
+  for (const k of ['phone', 'dialCode', 'country', 'designation', 'department']) {
+    const v = s(k);
+    if (v) record[k] = v;
+  }
+  await admin.firestore().doc(`buyers/${id}`).set(record);
+  return { id, uid: user.uid };
+});
+
+export const adminSetBuyerDisabled = onCall({ region: 'asia-south1' }, async (request) => {
+  await requireAdmin(request.auth?.uid);
+  const buyerId = String(request.data?.buyerId ?? '').trim();
+  const disabled = Boolean(request.data?.disabled);
+  if (!buyerId) throw new HttpsError('invalid-argument', 'buyerId is required.');
+
+  const ref = admin.firestore().doc(`buyers/${buyerId}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Buyer not found.');
+
+  const uid = snap.data()?.uid as string | null | undefined;
+  if (uid) {
+    try {
+      await admin.auth().updateUser(uid, { disabled });
+    } catch (err) {
+      logger.error('adminSetBuyerDisabled: updateUser failed', err);
+    }
+  }
+  await ref.set({ disabled, updatedAt: Date.now() }, { merge: true });
+  return { ok: true };
+});
+
+export const adminDeleteBuyer = onCall({ region: 'asia-south1' }, async (request) => {
+  await requireAdmin(request.auth?.uid);
+  const buyerId = String(request.data?.buyerId ?? '').trim();
+  if (!buyerId) throw new HttpsError('invalid-argument', 'buyerId is required.');
+
+  const ref = admin.firestore().doc(`buyers/${buyerId}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', 'Buyer not found.');
+
+  const uid = snap.data()?.uid as string | null | undefined;
+  if (uid) {
+    try {
+      await admin.auth().deleteUser(uid);
+    } catch (err) {
+      logger.error('adminDeleteBuyer: deleteUser failed (continuing)', err);
+    }
+  }
+  await ref.delete();
+  return { ok: true };
+});
