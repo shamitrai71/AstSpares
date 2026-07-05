@@ -108,6 +108,7 @@ export default function AdminProducts() {
   const [error, setError] = useState('');
   const [openBom, setOpenBom] = useState<string | null>(null);
   const [spares, setSpares] = useState<Record<string, ProductDoc[]>>({});
+  const [showArchived, setShowArchived] = useState(false);
 
   const load = async () => {
     const [p, c] = await Promise.all([listProducts(), listCategories()]);
@@ -128,7 +129,12 @@ export default function AdminProducts() {
   }, [categories]);
 
   // The main list shows equipment only; spares live under their parent.
-  const equipment = useMemo(() => (products ?? []).filter((p) => p.kind !== 'spare'), [products]);
+  // Archived equipment is kept in Firestore (for records/analytics) but shown
+  // in a separate view, not the working list.
+  const allEquipment = useMemo(() => (products ?? []).filter((p) => p.kind !== 'spare'), [products]);
+  const liveEquipment = useMemo(() => allEquipment.filter((p) => p.status !== 'Archived'), [allEquipment]);
+  const archivedEquipment = useMemo(() => allEquipment.filter((p) => p.status === 'Archived'), [allEquipment]);
+  const equipment = showArchived ? archivedEquipment : liveEquipment;
 
   const loadSpares = async (parentId: string) => {
     const s = await listSpares(parentId);
@@ -273,6 +279,15 @@ export default function AdminProducts() {
     setProducts((prev) => prev?.map((x) => (x.partNumber === p.partNumber ? { ...x, ...change } : x)) ?? null);
   };
 
+  const archive = async (p: ProductDoc) => {
+    if (!confirm(`Archive ${p.partNumber}? It leaves the public catalog and new RFQs, but is kept in the database (with its number) for records and analytics. You can restore it later.`)) return;
+    await quickPatch(p, { status: 'Archived' });
+  };
+  // Restore to Inactive (not straight to Active) so re-listing is a deliberate step.
+  const restore = async (p: ProductDoc) => {
+    await quickPatch(p, { status: 'Inactive' });
+  };
+
   if (products === null) return <p className="text-petroleum-300">Loading products…</p>;
 
   if (draft) {
@@ -377,13 +392,20 @@ export default function AdminProducts() {
             </label>
             <div className="flex items-end gap-4">
               <label className="flex items-center gap-2 text-sm text-petroleum">
-                <input type="checkbox" checked={p.inStock} onChange={(e) => setField('inStock', e.target.checked)} className="accent-safety" />
+                <input type="checkbox" checked={p.inStock} onChange={(e) => setField('inStock', e.target.checked)} className="accent-safety" disabled={p.status === 'Archived'} />
                 In stock
               </label>
-              <label className="flex items-center gap-2 text-sm text-petroleum">
-                <input type="checkbox" checked={p.status === 'Active'} onChange={(e) => setField('status', e.target.checked ? 'Active' : 'Inactive')} className="accent-safety" />
-                Active
-              </label>
+              {p.status === 'Archived' ? (
+                <span className="flex items-center gap-2 text-sm">
+                  <span className="eyebrow text-petroleum-300">archived</span>
+                  <button type="button" onClick={() => setField('status', 'Inactive')} className="text-xs text-safety-600 underline">Restore to inactive</button>
+                </span>
+              ) : (
+                <label className="flex items-center gap-2 text-sm text-petroleum">
+                  <input type="checkbox" checked={p.status === 'Active'} onChange={(e) => setField('status', e.target.checked ? 'Active' : 'Inactive')} className="accent-safety" />
+                  Active
+                </label>
+              )}
             </div>
           </div>
 
@@ -470,14 +492,25 @@ export default function AdminProducts() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-3xl">Products</h1>
         <div className="flex items-center gap-4">
-          <p className="text-sm text-petroleum-300">{equipment.length} equipment</p>
-          <button onClick={startNew} className="btn-primary">New product</button>
+          <p className="text-sm text-petroleum-300">
+            {showArchived ? `${archivedEquipment.length} archived` : `${liveEquipment.length} equipment`}
+          </p>
+          {(showArchived || archivedEquipment.length > 0) && (
+            <button onClick={() => setShowArchived((v) => !v)} className="text-sm text-petroleum-300 underline hover:text-petroleum">
+              {showArchived ? 'Back to active' : `Archived (${archivedEquipment.length})`}
+            </button>
+          )}
+          {!showArchived && <button onClick={startNew} className="btn-primary">New product</button>}
         </div>
       </div>
-      <p className="mt-2 text-sm text-petroleum-300">Changes go live on the next publish.</p>
+      <p className="mt-2 text-sm text-petroleum-300">
+        {showArchived
+          ? 'Archived items are retired from the catalog but kept for records and analytics. Restore returns an item as Inactive.'
+          : 'Changes go live on the next publish.'}
+      </p>
 
       {equipment.length === 0 ? (
-        <p className="mt-6 text-petroleum-300">No products yet. Add one, or run the seed.</p>
+        <p className="mt-6 text-petroleum-300">{showArchived ? 'No archived products.' : 'No products yet. Add one, or run the seed.'}</p>
       ) : (
         <div className="mt-6 overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
@@ -499,16 +532,23 @@ export default function AdminProducts() {
                     <td className="py-2">{p.productName}</td>
                     <td className="py-2 text-petroleum-300">{catName(p.categoryId)}</td>
                     <td className="py-2">
-                      <input type="checkbox" checked={p.inStock} onChange={(e) => quickPatch(p, { inStock: e.target.checked })} className="accent-safety" />
+                      {p.status === 'Archived'
+                        ? <span className="text-petroleum-300">—</span>
+                        : <input type="checkbox" checked={p.inStock} onChange={(e) => quickPatch(p, { inStock: e.target.checked })} className="accent-safety" />}
                     </td>
                     <td className="py-2">
-                      <input type="checkbox" checked={p.status === 'Active'} onChange={(e) => quickPatch(p, { status: e.target.checked ? 'Active' : 'Inactive' })} className="accent-safety" />
+                      {p.status === 'Archived'
+                        ? <span className="eyebrow text-petroleum-300">archived</span>
+                        : <input type="checkbox" checked={p.status === 'Active'} onChange={(e) => quickPatch(p, { status: e.target.checked ? 'Active' : 'Inactive' })} className="accent-safety" />}
                     </td>
                     <td className="py-2 text-right whitespace-nowrap">
                       <button onClick={() => toggleBom(p.partNumber)} className="text-xs text-petroleum-300 underline hover:text-petroleum">
                         {openBom === p.partNumber ? 'Hide spares' : 'Spares'}
                       </button>
                       <button onClick={() => startEdit(p)} className="ml-3 text-xs text-petroleum-300 underline hover:text-petroleum">Edit</button>
+                      {p.status === 'Archived'
+                        ? <button onClick={() => restore(p)} className="ml-3 text-xs text-safety-600 underline">Restore</button>
+                        : <button onClick={() => archive(p)} className="ml-3 text-xs text-petroleum-300 underline hover:text-petroleum">Archive</button>}
                       <button onClick={() => remove(p)} className="ml-3 text-xs text-petroleum-300 underline hover:text-safety">Delete</button>
                     </td>
                   </tr>

@@ -27,8 +27,13 @@ async function main() {
       return { ...rest, updatedAt: updatedAt ?? null };
     })
     // Spares (BOM items) are managed in the admin and shown at runtime, not
-    // baked into the static catalog. Keep the snapshot equipment-only.
-    .filter((p) => (p as { kind?: string }).kind !== 'spare');
+    // baked into the static catalog. Keep the snapshot equipment-only, and
+    // Active-only — Inactive and Archived records stay in Firestore (for the
+    // admin and analytics) but never ship in the public catalog bundle.
+    .filter((p) => {
+      const doc = p as { kind?: string; status?: string };
+      return doc.kind !== 'spare' && doc.status === 'Active';
+    });
 
   const out = resolve(process.cwd(), 'data', 'products.json');
   writeFileSync(out, JSON.stringify(products, null, 2) + '\n');

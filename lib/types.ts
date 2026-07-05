@@ -59,7 +59,7 @@ export interface ProductDoc {
   leadTimeWeeks: number;
   /** Unit of measure the item is quantified/quoted in (EA, KG, M, SET, …). */
   uom?: string;
-  status: 'Active' | 'Inactive';
+  status: 'Active' | 'Inactive' | 'Archived';
   /** Cloudinary (or any) image URLs. First entry is the primary thumbnail. */
   images: string[];
   datasheets: { label: string; url: string }[];
