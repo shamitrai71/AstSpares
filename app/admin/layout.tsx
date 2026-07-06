@@ -16,6 +16,7 @@ import { PublishButton } from '@/components/PublishButton';
 
 const TABS = [
   { href: '/admin/', label: 'Dashboard' },
+  { href: '/admin/insights/', label: 'Insights' },
   { href: '/admin/rfqs/', label: 'RFQs' },
   { href: '/admin/offline/', label: 'Offline order' },
   { href: '/admin/companies/', label: 'Companies' },

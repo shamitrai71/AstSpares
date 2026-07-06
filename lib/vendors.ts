@@ -75,6 +75,12 @@ export async function deleteVendor(id: string): Promise<void> {
 
 // ── Offerings (one vendor's offer to supply one item) ────────────────────────
 
+/** All offerings across every item — for analytics/insights. */
+export async function listAllOfferings(): Promise<VendorOffering[]> {
+  const snap = await getDocs(collection(db, 'vendorOfferings'));
+  return snap.docs.map((d) => ({ ...(d.data() as VendorOffering), id: d.id }));
+}
+
 export async function listOfferings(itemPartNumber: string): Promise<VendorOffering[]> {
   const snap = await getDocs(
     query(collection(db, 'vendorOfferings'), where('itemPartNumber', '==', itemPartNumber)),
