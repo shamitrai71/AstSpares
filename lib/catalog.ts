@@ -97,10 +97,21 @@ export function getAllProducts(): ProductDoc[] {
   return products.filter((p) => p.status === 'Active');
 }
 
-/** Products directly in a category OR any of its descendants. */
+/** Active equipment only (excludes spares) — for the catalog grid, category
+ *  pages, the globe and product-page generation. */
+export function getEquipment(): ProductDoc[] {
+  return getAllProducts().filter((p) => p.kind !== 'spare');
+}
+
+/** Active spares (BOM items) belonging to one equipment. */
+export function getSparesFor(parentPartNumber: string): ProductDoc[] {
+  return getAllProducts().filter((p) => p.kind === 'spare' && p.parentEquipmentId === parentPartNumber);
+}
+
+/** Equipment directly in a category OR any of its descendants (no spares). */
 export function getProductsInCategory(categoryId: string): ProductDoc[] {
   const ids = new Set([categoryId, ...getDescendantIds(categoryId)]);
-  return getAllProducts().filter((p) => ids.has(p.categoryId));
+  return getEquipment().filter((p) => ids.has(p.categoryId));
 }
 
 export function getProduct(slug: string): ProductDoc | undefined {
@@ -108,5 +119,5 @@ export function getProduct(slug: string): ProductDoc | undefined {
 }
 
 export function getManufacturers(): string[] {
-  return Array.from(new Set(getAllProducts().map((p) => p.manufacturer))).sort();
+  return Array.from(new Set(getEquipment().map((p) => p.manufacturer))).sort();
 }

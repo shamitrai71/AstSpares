@@ -61,14 +61,30 @@ export function CatalogBrowser({
 
   const tree = useMemo(() => orderTree(categories), [categories]);
 
+  // The grid shows equipment only. Spares are grouped under their parent so a
+  // search on a spare's number/name surfaces the parent equipment card.
+  const equipment = useMemo(() => products.filter((p) => p.kind !== 'spare'), [products]);
+  const sparesByParent = useMemo(() => {
+    const m = new Map<string, ProductDoc[]>();
+    for (const p of products) {
+      if (p.kind === 'spare' && p.parentEquipmentId) {
+        const a = m.get(p.parentEquipmentId) ?? [];
+        a.push(p);
+        m.set(p.parentEquipmentId, a);
+      }
+    }
+    return m;
+  }, [products]);
+
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
     const catSet = cat ? descendantIds(categories, cat) : null;
-    return products.filter((p) => {
+    return equipment.filter((p) => {
       if (catSet && !catSet.has(p.categoryId)) return false;
       if (mfr && p.manufacturer !== mfr) return false;
       if (inStockOnly && !p.inStock) return false;
       if (!term) return true;
+      const spares = sparesByParent.get(p.partNumber) ?? [];
       const haystack = [
         p.partNumber,
         p.productName,
@@ -77,12 +93,13 @@ export function CatalogBrowser({
         ...p.compatibleEquipment,
         ...p.specs.map((s) => `${s.label} ${s.value}`),
         ...(p.tags ?? []),
+        ...spares.flatMap((s) => [s.partNumber, s.productName]),
       ]
         .join(' ')
         .toLowerCase();
       return haystack.includes(term);
     });
-  }, [products, categories, q, cat, mfr, inStockOnly]);
+  }, [equipment, sparesByParent, categories, q, cat, mfr, inStockOnly]);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[240px_1fr]">

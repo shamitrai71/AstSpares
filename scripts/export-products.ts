@@ -26,14 +26,10 @@ async function main() {
       const { updatedAt, ...rest } = d.data();
       return { ...rest, updatedAt: updatedAt ?? null };
     })
-    // Spares (BOM items) are managed in the admin and shown at runtime, not
-    // baked into the static catalog. Keep the snapshot equipment-only, and
-    // Active-only — Inactive and Archived records stay in Firestore (for the
-    // admin and analytics) but never ship in the public catalog bundle.
-    .filter((p) => {
-      const doc = p as { kind?: string; status?: string };
-      return doc.kind !== 'spare' && doc.status === 'Active';
-    });
+    // Active-only — Inactive and Archived stay in Firestore (admin/analytics)
+    // but never ship publicly. Spares ARE included now, so equipment pages can
+    // list their BOM and search can match a spare (surfacing its parent).
+    .filter((p) => (p as { status?: string }).status === 'Active');
 
   const out = resolve(process.cwd(), 'data', 'products.json');
   writeFileSync(out, JSON.stringify(products, null, 2) + '\n');

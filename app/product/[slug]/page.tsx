@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
-  getAllProducts,
+  getEquipment,
+  getSparesFor,
   getProduct,
   getCategoryById,
   getCategoryPath,
@@ -11,7 +12,7 @@ import { SpecTable } from '@/components/SpecTable';
 import { AddToRfqButton } from '@/components/AddToRfqButton';
 
 export function generateStaticParams() {
-  return getAllProducts().map((p) => ({ slug: p.slug }));
+  return getEquipment().map((p) => ({ slug: p.slug }));
 }
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
@@ -30,6 +31,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const category = getCategoryById(product.categoryId);
   const path = category ? getCategoryPath(category) : [];
   const primaryImage = product.images?.[0];
+  const spares = getSparesFor(product.partNumber);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -175,6 +177,29 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           </div>
         </div>
       </div>
+
+      {spares.length > 0 && (
+        <section className="mt-14">
+          <h2 className="mb-4 font-display text-2xl">Spares &amp; components</h2>
+          <p className="mb-5 max-w-2xl text-sm text-petroleum-300">
+            Individual bill-of-materials parts for this assembly. Add any to your RFQ for a quote and lead time.
+          </p>
+          <div className="divide-y divide-paper-line border-y border-paper-line">
+            {spares.map((s) => (
+              <div key={s.partNumber} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                <div className="min-w-0">
+                  <span className="font-mono text-xs text-safety-600">{s.partNumber}</span>
+                  <span className="ml-3 text-petroleum">{s.productName}</span>
+                  {s.uom && <span className="ml-2 font-mono text-xs text-petroleum-300">/ {s.uom}</span>}
+                </div>
+                <div className="w-full sm:w-auto sm:min-w-[300px]">
+                  <AddToRfqButton partNumber={s.partNumber} productName={s.productName} uom={s.uom} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

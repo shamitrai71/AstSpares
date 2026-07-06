@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getTopLevelCategories, getAllProducts } from '@/lib/catalog';
+import { getTopLevelCategories, getEquipment } from '@/lib/catalog';
 import NetworkGlobe, { type GlobeFamily } from '@/components/NetworkGlobe';
 
 export const metadata: Metadata = {
@@ -28,7 +28,7 @@ const COLOR_EMPTY = '#E8742F'; // RFQ orange
 // (/home). Coverage is computed from the product snapshot, so it updates on
 // each build.
 export default function LandingGlobe() {
-  const populated = new Set(getAllProducts().map((p) => p.family).filter(Boolean));
+  const populated = new Set(getEquipment().map((p) => p.family).filter(Boolean));
 
   const categories: GlobeFamily[] = getTopLevelCategories().map((c) => ({
     id: c.id,

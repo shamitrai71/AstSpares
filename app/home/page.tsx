@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { getTopLevelCategories, getAllProducts } from '@/lib/catalog';
+import { getTopLevelCategories, getEquipment } from '@/lib/catalog';
 import { getSiteConfig } from '@/lib/site';
 import { ProductCard } from '@/components/ProductCard';
 
 export default function HomePage() {
   const categories = getTopLevelCategories();
-  const featured = getAllProducts().slice(0, 3);
+  const featured = getEquipment().slice(0, 3);
   const site = getSiteConfig();
 
   return (
