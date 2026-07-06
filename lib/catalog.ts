@@ -108,10 +108,15 @@ export function getSparesFor(parentPartNumber: string): ProductDoc[] {
   return getAllProducts().filter((p) => p.kind === 'spare' && p.parentEquipmentId === parentPartNumber);
 }
 
-/** Equipment directly in a category OR any of its descendants (no spares). */
+/** Look up any active product (equipment or spare) by its part number. */
+export function getProductByPartNumber(partNumber: string): ProductDoc | undefined {
+  return getAllProducts().find((p) => p.partNumber === partNumber);
+}
+
+/** Parts (equipment AND spares) directly in a category OR any descendant. */
 export function getProductsInCategory(categoryId: string): ProductDoc[] {
   const ids = new Set([categoryId, ...getDescendantIds(categoryId)]);
-  return getEquipment().filter((p) => ids.has(p.categoryId));
+  return getAllProducts().filter((p) => ids.has(p.categoryId));
 }
 
 export function getProduct(slug: string): ProductDoc | undefined {
@@ -119,5 +124,5 @@ export function getProduct(slug: string): ProductDoc | undefined {
 }
 
 export function getManufacturers(): string[] {
-  return Array.from(new Set(getEquipment().map((p) => p.manufacturer))).sort();
+  return Array.from(new Set(getAllProducts().map((p) => p.manufacturer).filter(Boolean))).sort();
 }

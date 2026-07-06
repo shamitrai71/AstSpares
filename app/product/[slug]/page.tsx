@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
-  getEquipment,
+  getAllProducts,
   getSparesFor,
   getProduct,
+  getProductByPartNumber,
   getCategoryById,
   getCategoryPath,
 } from '@/lib/catalog';
@@ -12,7 +13,7 @@ import { SpecTable } from '@/components/SpecTable';
 import { AddToRfqButton } from '@/components/AddToRfqButton';
 
 export function generateStaticParams() {
-  return getEquipment().map((p) => ({ slug: p.slug }));
+  return getAllProducts().map((p) => ({ slug: p.slug }));
 }
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
@@ -32,6 +33,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const path = category ? getCategoryPath(category) : [];
   const primaryImage = product.images?.[0];
   const spares = getSparesFor(product.partNumber);
+  const parent =
+    product.kind === 'spare' && product.parentEquipmentId
+      ? getProductByPartNumber(product.parentEquipmentId)
+      : undefined;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -124,6 +129,15 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           <span className="part-plate text-base">{product.partNumber}</span>
           <h1 className="mt-3 font-display text-4xl leading-tight">{product.productName}</h1>
 
+          {product.kind === 'spare' && parent && (
+            <p className="mt-2 text-sm text-petroleum-300">
+              Spare / component of{' '}
+              <Link href={`/product/${parent.slug}`} className="text-safety-600 underline">
+                {parent.partNumber} — {parent.productName}
+              </Link>
+            </p>
+          )}
+
           <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-petroleum-300">
             <span>{product.manufacturer}</span>
             <span className="flex items-center gap-1.5">
@@ -187,11 +201,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           <div className="divide-y divide-paper-line border-y border-paper-line">
             {spares.map((s) => (
               <div key={s.partNumber} className="flex flex-wrap items-center justify-between gap-3 py-4">
-                <div className="min-w-0">
+                <Link href={`/product/${s.slug}`} className="group min-w-0">
                   <span className="font-mono text-xs text-safety-600">{s.partNumber}</span>
-                  <span className="ml-3 text-petroleum">{s.productName}</span>
+                  <span className="ml-3 text-petroleum group-hover:underline">{s.productName}</span>
                   {s.uom && <span className="ml-2 font-mono text-xs text-petroleum-300">/ {s.uom}</span>}
-                </div>
+                </Link>
                 <div className="w-full sm:w-auto sm:min-w-[300px]">
                   <AddToRfqButton partNumber={s.partNumber} productName={s.productName} uom={s.uom} />
                 </div>
