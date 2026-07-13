@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { getAllProducts, getAllCategories, getManufacturers } from '@/lib/catalog';
+import { getAllProducts, getAllCategories } from '@/lib/catalog';
 import { CatalogBrowser } from '@/components/CatalogBrowser';
 
 export const metadata: Metadata = {
@@ -12,7 +12,6 @@ export const metadata: Metadata = {
 export default function ProductsPage() {
   const products = getAllProducts();
   const categories = getAllCategories();
-  const manufacturers = getManufacturers();
 
   return (
     <div className="shell py-12">
@@ -25,7 +24,7 @@ export default function ProductsPage() {
 
       <div className="mt-10">
         <Suspense fallback={<p className="text-sm text-petroleum-300">Loading catalog…</p>}>
-          <CatalogBrowser products={products} categories={categories} manufacturers={manufacturers} />
+          <CatalogBrowser products={products} categories={categories} />
         </Suspense>
       </div>
     </div>

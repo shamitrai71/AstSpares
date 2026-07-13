@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { listVendors, createVendor, updateVendor, deleteVendor } from '@/lib/vendors';
+import { VENDOR_TYPE_OPTIONS, DEFAULT_VENDOR_TYPE, vendorTypeLabel } from '@/lib/vendor-types';
 import type { Vendor, VendorType } from '@/lib/types';
-
-const TYPES: VendorType[] = ['manufacturer', 'distributor', 'partner', 'other'];
 
 type Draft = {
   id?: string;
@@ -22,7 +21,7 @@ type Draft = {
 
 const blank = (): Draft => ({
   name: '',
-  type: 'manufacturer',
+  type: DEFAULT_VENDOR_TYPE,
   country: '',
   contactName: '',
   contactEmail: '',
@@ -35,7 +34,7 @@ const blank = (): Draft => ({
 const toDraft = (v: Vendor): Draft => ({
   id: v.id,
   name: v.name,
-  type: v.type ?? 'other',
+  type: v.type ?? DEFAULT_VENDOR_TYPE,
   country: v.country ?? '',
   contactName: v.contactName ?? '',
   contactEmail: v.contactEmail ?? '',
@@ -130,7 +129,8 @@ export default function AdminVendors() {
             <label className="block">
               <span className="field-label">Type</span>
               <select value={draft.type} onChange={(e) => set('type', e.target.value as VendorType)} className="field">
-                {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                {!VENDOR_TYPE_OPTIONS.some((o) => o.code === draft.type) && <option value={draft.type}>{vendorTypeLabel(draft.type)}</option>}
+                {VENDOR_TYPE_OPTIONS.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)}
               </select>
             </label>
             <label className="block">
@@ -203,7 +203,7 @@ export default function AdminVendors() {
                 <tr key={v.id} className="border-t border-paper-line">
                   <td className="py-2 font-mono">{v.id}</td>
                   <td className="py-2">{v.name}</td>
-                  <td className="py-2 text-petroleum-300">{v.type ?? '—'}</td>
+                  <td className="py-2 text-petroleum-300">{vendorTypeLabel(v.type)}</td>
                   <td className="py-2 text-petroleum-300">{v.country ?? '—'}</td>
                   <td className="py-2">{v.active ? 'Yes' : 'No'}</td>
                   <td className="py-2 text-right whitespace-nowrap">

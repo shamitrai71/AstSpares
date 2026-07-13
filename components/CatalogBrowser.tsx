@@ -47,16 +47,13 @@ function descendantIds(categories: Category[], rootId: string): Set<string> {
 export function CatalogBrowser({
   products,
   categories,
-  manufacturers,
 }: {
   products: ProductDoc[];
   categories: Category[];
-  manufacturers: string[];
 }) {
   const params = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
   const [cat, setCat] = useState<string>('');
-  const [mfr, setMfr] = useState<string>('');
   const [inStockOnly, setInStockOnly] = useState(false);
 
   const tree = useMemo(() => orderTree(categories), [categories]);
@@ -66,14 +63,12 @@ export function CatalogBrowser({
     const catSet = cat ? descendantIds(categories, cat) : null;
     return products.filter((p) => {
       if (catSet && !catSet.has(p.categoryId)) return false;
-      if (mfr && p.manufacturer !== mfr) return false;
       if (inStockOnly && !p.inStock) return false;
       if (!term) return true;
       const haystack = [
         p.partNumber,
         p.productName,
         p.description,
-        p.manufacturer,
         ...p.compatibleEquipment,
         ...p.specs.map((s) => `${s.label} ${s.value}`),
         ...(p.tags ?? []),
@@ -82,7 +77,7 @@ export function CatalogBrowser({
         .toLowerCase();
       return haystack.includes(term);
     });
-  }, [products, categories, q, cat, mfr, inStockOnly]);
+  }, [products, categories, q, cat, inStockOnly]);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
@@ -114,16 +109,6 @@ export function CatalogBrowser({
             ))}
           </div>
         </fieldset>
-
-        <div>
-          <label className="field-label" htmlFor="mfr">Manufacturer</label>
-          <select id="mfr" value={mfr} onChange={(e) => setMfr(e.target.value)} className="field">
-            <option value="">All</option>
-            {manufacturers.map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-        </div>
 
         <label className="flex items-center gap-2 text-sm text-petroleum">
           <input

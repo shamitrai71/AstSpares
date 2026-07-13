@@ -110,7 +110,7 @@ export type CompanyType =
 
 // ── Vendors & sourcing (backend-only; never exported to the public catalog) ──
 
-export type VendorType = 'manufacturer' | 'distributor' | 'partner' | 'other';
+export type VendorType = 'manufacturer' | 'trader' | 'service' | 'other';
 
 export interface Vendor {
   /** AST-V-00001 — also the Firestore doc ID. */

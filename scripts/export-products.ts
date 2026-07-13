@@ -23,7 +23,10 @@ async function main() {
   const snap = await db.collection('products').orderBy('partNumber').get();
   const products = snap.docs
     .map((d) => {
-      const { updatedAt, ...rest } = d.data();
+      // Strip the internal-only vendor field (stored as `manufacturer`) so it
+      // never ships in the public catalog bundle.
+      const { updatedAt, manufacturer, ...rest } = d.data();
+      void manufacturer;
       return { ...rest, updatedAt: updatedAt ?? null };
     })
     // Active-only — Inactive and Archived stay in Firestore (admin/analytics)

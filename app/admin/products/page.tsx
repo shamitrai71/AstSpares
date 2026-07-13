@@ -9,10 +9,11 @@ import {
   listSpares,
   mintSpareNumber,
 } from '@/lib/db';
-import type { Category, ProductDoc, SpecRow } from '@/lib/types';
+import type { Category, ProductDoc, SpecRow, Vendor } from '@/lib/types';
 import { optimizeCloudinaryUrl } from '@/lib/images';
 import { UOM_OPTIONS, DEFAULT_UOM } from '@/lib/uom';
 import { SourcingPanel } from '@/components/SourcingPanel';
+import { listVendors } from '@/lib/vendors';
 
 function slugify(s: string): string {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -58,7 +59,7 @@ const blankProduct = (): ProductDoc => ({
   productName: '',
   categoryId: '',
   family: '',
-  manufacturer: 'ASTSPARES',
+  manufacturer: '',
   description: '',
   features: [],
   specs: [],
@@ -103,6 +104,7 @@ function cleanFields(p: ProductDoc) {
 export default function AdminProducts() {
   const [products, setProducts] = useState<ProductDoc[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [draft, setDraft] = useState<{ product: ProductDoc; isNew: boolean; spareParent?: ProductDoc; originalCategoryId?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -111,9 +113,10 @@ export default function AdminProducts() {
   const [showArchived, setShowArchived] = useState(false);
 
   const load = async () => {
-    const [p, c] = await Promise.all([listProducts(), listCategories()]);
+    const [p, c, v] = await Promise.all([listProducts(), listCategories(), listVendors()]);
     setProducts(p);
     setCategories(c);
+    setVendors(v);
   };
   useEffect(() => {
     load().catch(() => setProducts([]));
@@ -370,8 +373,17 @@ export default function AdminProducts() {
 
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="block">
-              <span className="field-label">Manufacturer</span>
-              <input value={p.manufacturer} onChange={(e) => setField('manufacturer', e.target.value)} className="field" />
+              <span className="field-label">Vendor (internal — not shown publicly)</span>
+              <input
+                list="vendor-options"
+                value={p.manufacturer}
+                onChange={(e) => setField('manufacturer', e.target.value)}
+                placeholder="Select or type a vendor"
+                className="field"
+              />
+              <datalist id="vendor-options">
+                {vendors.map((v) => <option key={v.id} value={v.name} />)}
+              </datalist>
             </label>
             <label className="block">
               <span className="field-label">Lead time (weeks)</span>

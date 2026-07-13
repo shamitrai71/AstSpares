@@ -44,7 +44,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     name: product.productName,
     sku: product.partNumber,
     mpn: product.partNumber,
-    brand: { '@type': 'Brand', name: product.manufacturer },
+    brand: { '@type': 'Brand', name: product.fulfilledBy || 'ASTSPARES' },
     description: product.description,
     category: category?.name,
     ...(primaryImage ? { image: product.images } : {}),
@@ -139,7 +139,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           )}
 
           <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-petroleum-300">
-            <span>{product.manufacturer}</span>
             <span className="flex items-center gap-1.5">
               <span className={`stock-dot ${product.inStock ? 'bg-emerald-600' : 'bg-petroleum-300'}`} />
               {product.inStock ? 'In stock' : 'Made to order'}
