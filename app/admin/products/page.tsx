@@ -376,7 +376,7 @@ export default function AdminProducts() {
               <span className="field-label">Vendor (internal — not shown publicly)</span>
               <input
                 list="vendor-options"
-                value={p.manufacturer}
+                value={p.manufacturer ?? ''}
                 onChange={(e) => setField('manufacturer', e.target.value)}
                 placeholder="Select or type a vendor"
                 className="field"

@@ -51,7 +51,7 @@ export interface ProductDoc {
   categoryId: string;
   /** Denormalised top-level family code for badges/prefix (e.g. "RS"). */
   family: ProductFamily;
-  manufacturer: string;
+  manufacturer?: string;  // internal vendor; stripped from the public export
   description: string;
   features: string[];
   specs: SpecRow[];

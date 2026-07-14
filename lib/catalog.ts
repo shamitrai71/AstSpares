@@ -122,7 +122,3 @@ export function getProductsInCategory(categoryId: string): ProductDoc[] {
 export function getProduct(slug: string): ProductDoc | undefined {
   return products.find((p) => p.slug === slug);
 }
-
-export function getManufacturers(): string[] {
-  return Array.from(new Set(getAllProducts().map((p) => p.manufacturer).filter(Boolean))).sort();
-}
