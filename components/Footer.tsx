@@ -8,7 +8,10 @@ export function Footer() {
     <footer className="mt-24 border-t border-paper-line bg-petroleum text-paper">
       <div className="shell grid gap-8 py-12 sm:grid-cols-3">
         <div>
-          <p className="font-display text-2xl">ASTSPARES</p>
+          <p className="flex items-center gap-2 font-display text-2xl">
+            <img src="/brand-icon.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0" />
+            ASTSPARES
+          </p>
           <p className="mt-2 max-w-xs text-sm text-paper/70">{site.footerTagline}</p>
           {(site.footerEmail || site.footerPhone) && (
             <div className="mt-3 space-y-1 text-sm text-paper/80">
