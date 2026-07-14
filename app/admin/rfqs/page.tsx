@@ -8,6 +8,7 @@ import { QuoteBuilder } from '@/components/QuoteBuilder';
 import { QuoteThread } from '@/components/QuoteThread';
 import { OnlinePoForm } from '@/components/OnlinePoForm';
 import { PoView } from '@/components/PoView';
+import { VendorEnquiries } from '@/components/VendorEnquiries';
 import type { PurchaseOrder, RfqDoc, RfqStatus } from '@/lib/types';
 
 const STATUSES: RfqStatus[] = ['Pending', 'Quoted', 'Negotiating', 'Won', 'Lost'];
@@ -103,6 +104,8 @@ export default function AdminRfqs() {
                     bump={bump}
                     onChanged={load}
                   />
+
+                  <VendorEnquiries rfqNo={r.rfqNo} />
 
                   {r.status === 'Won' && (
                     <div className="mt-4 border-t border-paper-line pt-4">

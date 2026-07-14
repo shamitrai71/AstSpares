@@ -153,6 +153,45 @@ export interface VendorOffering {
   updatedAt?: number;
 }
 
+// ── Back-to-back vendor enquiries (internal; generated from a buyer RFQ) ──
+
+export type VendorEnquiryStatus = 'draft' | 'sent' | 'responded' | 'closed';
+
+export interface VendorEnquiryItem {
+  itemPartNumber: string;
+  description: string;
+  quantity: number;
+  uom?: string;
+  /** Last-known values from the vendor offering, shown as reference. */
+  refCost?: number;
+  refLeadTimeDays?: number;
+  /** Captured from the vendor's reply. */
+  quotedCost?: number;
+  quotedLeadTimeDays?: number;
+}
+
+export interface VendorEnquiry {
+  /** AST-VE-00001 — also the Firestore doc ID. */
+  id: string;
+  /** The source buyer RFQ this was generated from. */
+  rfqNo: string;
+  vendorId: string;
+  vendorName: string;
+  /** Denormalised vendor contact email; empty → cannot be sent. */
+  vendorEmail?: string;
+  /** Enquiry currency (defaults to INR; may differ per vendor). */
+  currency: string;
+  items: VendorEnquiryItem[];
+  status: VendorEnquiryStatus;
+  /** Free-text notes captured from the vendor's response. */
+  notes?: string;
+  createdBy?: string;
+  createdAt: number;
+  sentAt?: number;
+  respondedAt?: number;
+  updatedAt?: number;
+}
+
 export interface Company {
   /** AST-CO-00001 — also the Firestore doc ID. */
   id: string;

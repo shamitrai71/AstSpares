@@ -481,3 +481,171 @@ export const adminDeleteBuyer = onCall({ region: 'asia-south1' }, async (request
   await ref.delete();
   return { ok: true };
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// Back-to-back vendor enquiries.
+// Generate one draft enquiry per vendor from a buyer RFQ (grouping the items
+// each vendor sources), then send a PRIVACY-SAFE email asking the vendor to
+// quote cost + lead time. The email never reveals the buyer or the sell price.
+// vendorEnquiries share the same monotonic counter discipline (AST-VE-#####).
+// ─────────────────────────────────────────────────────────────────────────
+function stripUndef<T extends Record<string, unknown>>(o: T): T {
+  return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
+}
+
+async function nextVendorEnquiryId(): Promise<string> {
+  const db = admin.firestore();
+  const ref = db.doc('counters/ve');
+  const seq = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const current = snap.exists ? ((snap.data()?.seq as number) ?? 0) : 0;
+    const next = current + 1;
+    tx.set(ref, { seq: next, updatedAt: Date.now() }, { merge: true });
+    return next;
+  });
+  return `AST-VE-${String(seq).padStart(5, '0')}`;
+}
+
+export const generateVendorEnquiries = onCall({ region: 'asia-south1' }, async (request) => {
+  const adminUid = await requireAdmin(request.auth?.uid);
+  const rfqNo = String(request.data?.rfqNo ?? '').trim();
+  if (!rfqNo) throw new HttpsError('invalid-argument', 'rfqNo is required.');
+  const db = admin.firestore();
+
+  const rfqSnap = await db.doc(`rfqs/${rfqNo}`).get();
+  if (!rfqSnap.exists) throw new HttpsError('not-found', 'RFQ not found.');
+  const rfq = rfqSnap.data() as {
+    items?: { partNumber: string; productName: string; quantity: number; uom?: string }[];
+  };
+  const items = rfq.items ?? [];
+
+  const [offSnap, venSnap] = await Promise.all([
+    db.collection('vendorOfferings').get(),
+    db.collection('vendors').get(),
+  ]);
+  const offerings = offSnap.docs.map(
+    (d) => d.data() as { itemPartNumber: string; vendorId: string; cost: number; currency: string; leadTimeDays?: number },
+  );
+  const vendors = new Map(venSnap.docs.map((d) => [d.id, d.data() as { name: string; contactEmail?: string }]));
+
+  // Group items by vendor. An item offered by N vendors lands in N buckets
+  // (multiple vendors per item → competitive enquiries).
+  type Item = ReturnType<typeof buildItem>;
+  const buildItem = (
+    it: { partNumber: string; productName: string; quantity: number; uom?: string },
+    o: { cost: number; leadTimeDays?: number },
+  ) =>
+    stripUndef({
+      itemPartNumber: it.partNumber,
+      description: it.productName,
+      quantity: it.quantity,
+      uom: it.uom,
+      refCost: o.cost,
+      refLeadTimeDays: o.leadTimeDays,
+    });
+
+  const buckets = new Map<string, { items: Item[]; currency: string }>();
+  const unsourced: string[] = [];
+  for (const it of items) {
+    const offs = offerings.filter((o) => o.itemPartNumber === it.partNumber);
+    if (offs.length === 0) {
+      unsourced.push(it.partNumber);
+      continue;
+    }
+    for (const o of offs) {
+      const b = buckets.get(o.vendorId) ?? { items: [], currency: o.currency || 'INR' };
+      b.items.push(buildItem(it, o));
+      buckets.set(o.vendorId, b);
+    }
+  }
+
+  // Refresh drafts for this RFQ (keep any already sent/responded).
+  const existing = await db
+    .collection('vendorEnquiries')
+    .where('rfqNo', '==', rfqNo)
+    .where('status', '==', 'draft')
+    .get();
+  const delBatch = db.batch();
+  existing.docs.forEach((d) => delBatch.delete(d.ref));
+  await delBatch.commit();
+
+  let created = 0;
+  for (const [vendorId, b] of buckets) {
+    const v = vendors.get(vendorId);
+    const id = await nextVendorEnquiryId();
+    const email = (v?.contactEmail ?? '').trim();
+    const rec = stripUndef({
+      id,
+      rfqNo,
+      vendorId,
+      vendorName: v?.name ?? vendorId,
+      vendorEmail: email || undefined,
+      currency: b.currency || 'INR',
+      items: b.items,
+      status: 'draft',
+      createdBy: adminUid,
+      createdAt: Date.now(),
+    });
+    await db.doc(`vendorEnquiries/${id}`).set(rec);
+    created += 1;
+  }
+
+  return { created, unsourced, vendors: buckets.size };
+});
+
+export const sendVendorEnquiry = onCall(
+  { region: 'asia-south1', secrets: [RESEND_API_KEY] },
+  async (request) => {
+    await requireAdmin(request.auth?.uid);
+    const id = String(request.data?.enquiryId ?? '').trim();
+    if (!id) throw new HttpsError('invalid-argument', 'enquiryId is required.');
+    const db = admin.firestore();
+    const ref = db.doc(`vendorEnquiries/${id}`);
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'Enquiry not found.');
+    const e = snap.data() as {
+      vendorName: string;
+      vendorEmail?: string;
+      currency: string;
+      items: { itemPartNumber: string; description: string; quantity: number; uom?: string }[];
+    };
+    const email = (e.vendorEmail ?? '').trim();
+    if (!email) {
+      throw new HttpsError('failed-precondition', 'This vendor has no contact email — add one under Vendors, then regenerate.');
+    }
+
+    const rows = e.items
+      .map(
+        (it) =>
+          `<tr><td style="padding:4px 14px 4px 0;font-family:monospace">${it.itemPartNumber}</td>` +
+          `<td style="padding:4px 14px 4px 0">${it.description}</td>` +
+          `<td style="padding:4px 0;text-align:right">${it.quantity}${it.uom ? ' ' + it.uom : ''}</td></tr>`,
+      )
+      .join('');
+    // Privacy: no buyer identity, no buyer RFQ number, no sell price.
+    const html =
+      `<p>Dear ${e.vendorName},</p>` +
+      `<p>Please send us your best <strong>unit price and lead time</strong> for the items below, quoted in <strong>${e.currency}</strong>. Reply to this email with your quotation. Our reference: <strong>${id}</strong>.</p>` +
+      `<table style="border-collapse:collapse;margin:12px 0"><thead><tr>` +
+      `<th style="text-align:left;padding:4px 14px 4px 0">Part</th>` +
+      `<th style="text-align:left;padding:4px 14px 4px 0">Description</th>` +
+      `<th style="text-align:right;padding:4px 0">Qty</th></tr></thead><tbody>${rows}</tbody></table>` +
+      `<p>Thank you,<br/>ASTSPARES — Procurement</p>`;
+
+    const resend = new Resend(RESEND_API_KEY.value());
+    try {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        reply_to: SALES_EMAIL,
+        subject: `ASTSPARES — Enquiry ${id}`,
+        html,
+      });
+    } catch (err) {
+      logger.error(`Failed to send vendor enquiry ${id}`, err);
+      throw new HttpsError('internal', 'Could not send the enquiry email.');
+    }
+    await ref.set({ status: 'sent', sentAt: Date.now() }, { merge: true });
+    return { ok: true };
+  },
+);

@@ -28,6 +28,9 @@ service cloud.firestore {
     match /vendorOfferings/{id} {
       allow read, write: if isAdmin();
     }
+    match /vendorEnquiries/{id} {
+      allow read, write: if isAdmin();
+    }
 
     // Category tree — public read, admin write.
     match /categories/{categoryId} {
