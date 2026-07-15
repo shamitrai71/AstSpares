@@ -255,6 +255,8 @@ export default function AdminVendors() {
                 <th className="py-2">ID</th>
                 <th className="py-2">Name</th>
                 <th className="py-2">Type</th>
+                <th className="py-2">PIN</th>
+                <th className="py-2">City / State</th>
                 <th className="py-2">Country</th>
                 <th className="py-2">Active</th>
                 <th className="py-2"></th>
@@ -266,6 +268,8 @@ export default function AdminVendors() {
                   <td className="py-2 font-mono">{v.id}</td>
                   <td className="py-2">{v.name}</td>
                   <td className="py-2 text-petroleum-300">{vendorTypeLabel(v.type)}</td>
+                  <td className="py-2 font-mono text-petroleum">{v.postalCode ?? '—'}</td>
+                  <td className="py-2 text-petroleum-300">{[v.city, v.region].filter(Boolean).join(' · ') || '—'}</td>
                   <td className="py-2 text-petroleum-300">{v.country ?? '—'}</td>
                   <td className="py-2">{v.active ? 'Yes' : 'No'}</td>
                   <td className="py-2 text-right whitespace-nowrap">
