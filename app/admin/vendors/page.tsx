@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { listVendors, createVendor, updateVendor, deleteVendor } from '@/lib/vendors';
+import { COUNTRIES } from '@/lib/countries';
+import { lookupPostal } from '@/lib/postal';
 import { VENDOR_TYPE_OPTIONS, DEFAULT_VENDOR_TYPE, vendorTypeLabel } from '@/lib/vendor-types';
 import type { Vendor, VendorType } from '@/lib/types';
 
@@ -11,6 +13,10 @@ type Draft = {
   name: string;
   type: VendorType;
   country: string;
+  postalCode: string;
+  city: string;
+  region: string;
+  address: string;
   contactName: string;
   contactEmail: string;
   phone: string;
@@ -23,6 +29,10 @@ const blank = (): Draft => ({
   name: '',
   type: DEFAULT_VENDOR_TYPE,
   country: '',
+  postalCode: '',
+  city: '',
+  region: '',
+  address: '',
   contactName: '',
   contactEmail: '',
   phone: '',
@@ -36,6 +46,10 @@ const toDraft = (v: Vendor): Draft => ({
   name: v.name,
   type: v.type ?? DEFAULT_VENDOR_TYPE,
   country: v.country ?? '',
+  postalCode: v.postalCode ?? '',
+  city: v.city ?? '',
+  region: v.region ?? '',
+  address: v.address ?? '',
   contactName: v.contactName ?? '',
   contactEmail: v.contactEmail ?? '',
   phone: v.phone ?? '',
@@ -50,12 +64,25 @@ export default function AdminVendors() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [pinState, setPinState] = useState<'idle' | 'loading' | 'notfound'>('idle');
 
   const load = () => listVendors().then(setVendors).catch(() => setVendors([]));
   useEffect(() => { load(); }, []);
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) =>
     setDraft((d) => (d ? { ...d, [k]: v } : d));
+
+  const runPostalLookup = async () => {
+    if (!draft || !draft.postalCode.trim() || !draft.country) return;
+    setPinState('loading');
+    const r = await lookupPostal(draft.country, draft.postalCode);
+    if (r && (r.city || r.region)) {
+      setDraft((d) => (d ? { ...d, city: r.city || d.city, region: r.region || d.region } : d));
+      setPinState('idle');
+    } else {
+      setPinState('notfound');
+    }
+  };
 
   const save = async () => {
     if (!draft) return;
@@ -69,6 +96,10 @@ export default function AdminVendors() {
           name: draft.name.trim(),
           type: draft.type,
           country: draft.country.trim() || undefined,
+          postalCode: draft.postalCode.trim() || undefined,
+          city: draft.city.trim() || undefined,
+          region: draft.region.trim() || undefined,
+          address: draft.address.trim() || undefined,
           contactName: draft.contactName.trim() || undefined,
           contactEmail: draft.contactEmail.trim() || undefined,
           phone: draft.phone.trim() || undefined,
@@ -82,6 +113,10 @@ export default function AdminVendors() {
             name: draft.name,
             type: draft.type,
             country: draft.country,
+            postalCode: draft.postalCode,
+            city: draft.city,
+            region: draft.region,
+            address: draft.address,
             contactName: draft.contactName,
             contactEmail: draft.contactEmail,
             phone: draft.phone,
@@ -135,7 +170,34 @@ export default function AdminVendors() {
             </label>
             <label className="block">
               <span className="field-label">Country</span>
-              <input value={draft.country} onChange={(e) => set('country', e.target.value)} className="field" />
+              <select value={draft.country} onChange={(e) => set('country', e.target.value)} className="field">
+                <option value="">— Select —</option>
+                {COUNTRIES.map((c) => <option key={c.iso2} value={c.name}>{c.name}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="field-label">PIN / Postal code</span>
+              <input
+                value={draft.postalCode}
+                onChange={(e) => set('postalCode', e.target.value)}
+                onBlur={runPostalLookup}
+                placeholder={draft.country ? 'auto-fills city & region' : 'select a country first'}
+                className="field"
+              />
+              {pinState === 'loading' && <span className="mt-1 block text-xs text-petroleum-300">Looking up…</span>}
+              {pinState === 'notfound' && <span className="mt-1 block text-xs text-safety-600">Not found — enter city / region manually</span>}
+            </label>
+            <label className="block">
+              <span className="field-label">City / District</span>
+              <input value={draft.city} onChange={(e) => set('city', e.target.value)} className="field" />
+            </label>
+            <label className="block">
+              <span className="field-label">Region / State</span>
+              <input value={draft.region} onChange={(e) => set('region', e.target.value)} className="field" />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className="field-label">Address</span>
+              <input value={draft.address} onChange={(e) => set('address', e.target.value)} placeholder="Street address" className="field" />
             </label>
             <label className="block">
               <span className="field-label">Default lead time (days)</span>

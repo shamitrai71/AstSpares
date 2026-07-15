@@ -38,6 +38,10 @@ export async function createVendor(
     name: string;
     type?: VendorType;
     country?: string;
+    postalCode?: string;
+    city?: string;
+    region?: string;
+    address?: string;
     contactName?: string;
     contactEmail?: string;
     phone?: string;
@@ -52,6 +56,10 @@ export async function createVendor(
     name: input.name.trim(),
     type: input.type,
     country: input.country?.trim() || undefined,
+    postalCode: input.postalCode?.trim() || undefined,
+    city: input.city?.trim() || undefined,
+    region: input.region?.trim() || undefined,
+    address: input.address?.trim() || undefined,
     contactName: input.contactName?.trim() || undefined,
     contactEmail: input.contactEmail?.trim() || undefined,
     phone: input.phone?.trim() || undefined,

@@ -118,6 +118,11 @@ export interface Vendor {
   name: string;
   type?: VendorType;
   country?: string;
+  /** Structured location for shipping/freight analysis (later). */
+  postalCode?: string;
+  city?: string;
+  region?: string;
+  address?: string;
   contactName?: string;
   contactEmail?: string;
   phone?: string;
