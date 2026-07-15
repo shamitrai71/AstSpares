@@ -197,6 +197,51 @@ export interface VendorEnquiry {
   updatedAt?: number;
 }
 
+// ── Inventory (admin-only; append-only movement ledger) ──────────────────
+
+export type LocationType = 'own' | '3pl' | 'vendor';
+
+export interface StockLocation {
+  /** AST-LOC-00001 — also the Firestore doc ID. */
+  id: string;
+  name: string;
+  type: LocationType;
+  /** For type 'vendor': the vendor this stock sits with. */
+  vendorId?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  active: boolean;
+  createdBy?: string;
+  createdAt: number;
+}
+
+export type MovementType = 'receipt' | 'issue' | 'adjust' | 'transfer' | 'reserve' | 'release';
+
+export interface StockMovement {
+  id: string;
+  itemPartNumber: string;
+  type: MovementType;
+  /** Positive magnitude for all types except 'adjust', which may be signed. */
+  qty: number;
+  /** Primary location. For 'transfer' this is the source. */
+  locationId: string;
+  /** Destination for 'transfer'. */
+  toLocationId?: string;
+  note?: string;
+  /** Optional reference (RFQ / PO / enquiry number). */
+  ref?: string;
+  createdBy?: string;
+  createdAt: number;
+}
+
+export interface StockItem {
+  /** partNumber — also the Firestore doc ID. */
+  partNumber: string;
+  reorderPoint?: number;
+  updatedAt?: number;
+}
+
 export interface Company {
   /** AST-CO-00001 — also the Firestore doc ID. */
   id: string;

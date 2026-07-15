@@ -24,6 +24,7 @@ const TABS = [
   { href: '/admin/categories/', label: 'Categories' },
   { href: '/admin/products/', label: 'Products' },
   { href: '/admin/vendors/', label: 'Vendors' },
+  { href: '/admin/inventory/', label: 'Inventory' },
   { href: '/admin/landing/', label: 'Landing' },
 ];
 
