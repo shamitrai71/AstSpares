@@ -42,6 +42,10 @@ export async function createVendor(
     city?: string;
     region?: string;
     address?: string;
+    gstin?: string;
+    pan?: string;
+    isMsme?: boolean;
+    udyamNumber?: string;
     contactName?: string;
     contactEmail?: string;
     phone?: string;
@@ -60,6 +64,10 @@ export async function createVendor(
     city: input.city?.trim() || undefined,
     region: input.region?.trim() || undefined,
     address: input.address?.trim() || undefined,
+    gstin: input.gstin?.trim().toUpperCase() || undefined,
+    pan: input.pan?.trim().toUpperCase() || undefined,
+    isMsme: input.isMsme,
+    udyamNumber: input.isMsme ? input.udyamNumber?.trim().toUpperCase() || undefined : undefined,
     contactName: input.contactName?.trim() || undefined,
     contactEmail: input.contactEmail?.trim() || undefined,
     phone: input.phone?.trim() || undefined,

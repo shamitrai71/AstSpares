@@ -123,6 +123,11 @@ export interface Vendor {
   city?: string;
   region?: string;
   address?: string;
+  gstin?: string;
+  pan?: string;
+  /** MSME (Udyam) registration status. */
+  isMsme?: boolean;
+  udyamNumber?: string;
   contactName?: string;
   contactEmail?: string;
   phone?: string;

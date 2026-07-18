@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { listVendors, createVendor, updateVendor, deleteVendor } from '@/lib/vendors';
+import { listVendors, createVendor, updateVendor, deleteVendor, listAllOfferings } from '@/lib/vendors';
+import { listProducts } from '@/lib/db';
 import { COUNTRIES } from '@/lib/countries';
 import { lookupPostal } from '@/lib/postal';
 import { VENDOR_TYPE_OPTIONS, DEFAULT_VENDOR_TYPE, vendorTypeLabel } from '@/lib/vendor-types';
-import type { Vendor, VendorType } from '@/lib/types';
+import type { Vendor, VendorType, VendorOffering, ProductDoc } from '@/lib/types';
 
 type Draft = {
   id?: string;
@@ -17,6 +18,10 @@ type Draft = {
   city: string;
   region: string;
   address: string;
+  gstin: string;
+  pan: string;
+  isMsme: boolean;
+  udyamNumber: string;
   contactName: string;
   contactEmail: string;
   phone: string;
@@ -33,6 +38,10 @@ const blank = (): Draft => ({
   city: '',
   region: '',
   address: '',
+  gstin: '',
+  pan: '',
+  isMsme: false,
+  udyamNumber: '',
   contactName: '',
   contactEmail: '',
   phone: '',
@@ -50,6 +59,10 @@ const toDraft = (v: Vendor): Draft => ({
   city: v.city ?? '',
   region: v.region ?? '',
   address: v.address ?? '',
+  gstin: v.gstin ?? '',
+  pan: v.pan ?? '',
+  isMsme: v.isMsme ?? false,
+  udyamNumber: v.udyamNumber ?? '',
   contactName: v.contactName ?? '',
   contactEmail: v.contactEmail ?? '',
   phone: v.phone ?? '',
@@ -61,6 +74,9 @@ const toDraft = (v: Vendor): Draft => ({
 export default function AdminVendors() {
   const { user } = useAuth();
   const [vendors, setVendors] = useState<Vendor[] | null>(null);
+  const [offerings, setOfferings] = useState<VendorOffering[]>([]);
+  const [products, setProducts] = useState<ProductDoc[]>([]);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -68,6 +84,28 @@ export default function AdminVendors() {
 
   const load = () => listVendors().then(setVendors).catch(() => setVendors([]));
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    listAllOfferings().then(setOfferings).catch(() => setOfferings([]));
+    listProducts().then(setProducts).catch(() => setProducts([]));
+  }, []);
+
+  const productByPart = useMemo(() => new Map(products.map((p) => [p.partNumber, p])), [products]);
+  const linksByVendor = useMemo(() => {
+    const m = new Map<string, VendorOffering[]>();
+    for (const o of offerings) {
+      const arr = m.get(o.vendorId) ?? [];
+      arr.push(o);
+      m.set(o.vendorId, arr);
+    }
+    return m;
+  }, [offerings]);
+
+  const toggleExpanded = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) =>
     setDraft((d) => (d ? { ...d, [k]: v } : d));
@@ -100,6 +138,10 @@ export default function AdminVendors() {
           city: draft.city.trim() || undefined,
           region: draft.region.trim() || undefined,
           address: draft.address.trim() || undefined,
+          gstin: draft.gstin.trim().toUpperCase() || undefined,
+          pan: draft.pan.trim().toUpperCase() || undefined,
+          isMsme: draft.isMsme,
+          udyamNumber: draft.isMsme ? (draft.udyamNumber.trim().toUpperCase() || undefined) : '',
           contactName: draft.contactName.trim() || undefined,
           contactEmail: draft.contactEmail.trim() || undefined,
           phone: draft.phone.trim() || undefined,
@@ -117,6 +159,10 @@ export default function AdminVendors() {
             city: draft.city,
             region: draft.region,
             address: draft.address,
+            gstin: draft.gstin,
+            pan: draft.pan,
+            isMsme: draft.isMsme,
+            udyamNumber: draft.udyamNumber,
             contactName: draft.contactName,
             contactEmail: draft.contactEmail,
             phone: draft.phone,
@@ -136,7 +182,9 @@ export default function AdminVendors() {
   };
 
   const remove = async (v: Vendor) => {
-    if (!confirm(`Delete vendor ${v.id} — ${v.name}? (Its offerings on products will be left dangling.)`)) return;
+    const linked = linksByVendor.get(v.id)?.length ?? 0;
+    const warning = linked > 0 ? ` It is linked to ${linked} product offering${linked === 1 ? '' : 's'}, which will be left dangling.` : '';
+    if (!confirm(`Delete vendor ${v.id} — ${v.name}?${warning}`)) return;
     setBusy(true);
     try {
       await deleteVendor(v.id);
@@ -155,6 +203,16 @@ export default function AdminVendors() {
           <h1 className="font-display text-3xl">{draft.id ? `Edit ${draft.id}` : 'New vendor'}</h1>
           <button onClick={() => setDraft(null)} className="btn-ghost">Back</button>
         </div>
+        {draft.id && (
+          <p className="mt-1 text-sm text-petroleum-300">
+            Linked products:{' '}
+            {(linksByVendor.get(draft.id)?.length ?? 0) === 0 ? (
+              <span>none</span>
+            ) : (
+              <span className="font-medium text-safety-600">{linksByVendor.get(draft.id)!.length}</span>
+            )}
+          </p>
+        )}
         <div className="mt-6 space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
@@ -199,6 +257,54 @@ export default function AdminVendors() {
               <span className="field-label">Address</span>
               <input value={draft.address} onChange={(e) => set('address', e.target.value)} placeholder="Street address" className="field" />
             </label>
+            <label className="block">
+              <span className="field-label">GSTIN</span>
+              <input
+                value={draft.gstin}
+                onChange={(e) => set('gstin', e.target.value.toUpperCase())}
+                placeholder="e.g. 27AAJCP5215C1ZN"
+                maxLength={15}
+                className="field font-mono"
+              />
+              {draft.gstin && draft.gstin.length !== 15 && (
+                <span className="mt-1 block text-xs text-safety-600">GSTIN is normally 15 characters</span>
+              )}
+            </label>
+            <label className="block">
+              <span className="field-label">PAN</span>
+              <input
+                value={draft.pan}
+                onChange={(e) => set('pan', e.target.value.toUpperCase())}
+                placeholder="e.g. AAJCP5215C"
+                maxLength={10}
+                className="field font-mono"
+              />
+              {draft.pan && draft.pan.length !== 10 && (
+                <span className="mt-1 block text-xs text-safety-600">PAN is normally 10 characters</span>
+              )}
+            </label>
+            <div className="block sm:col-span-2">
+              <span className="field-label">MSME (Udyam) registered?</span>
+              <div className="mt-1 flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-petroleum">
+                  <input type="radio" name="isMsme" checked={draft.isMsme === true} onChange={() => set('isMsme', true)} className="accent-safety" />
+                  Yes — MSME
+                </label>
+                <label className="flex items-center gap-2 text-sm text-petroleum">
+                  <input type="radio" name="isMsme" checked={draft.isMsme === false} onChange={() => set('isMsme', false)} className="accent-safety" />
+                  No
+                </label>
+                {draft.isMsme && (
+                  <input
+                    value={draft.udyamNumber}
+                    onChange={(e) => set('udyamNumber', e.target.value.toUpperCase())}
+                    placeholder="Udyam number, e.g. UDYAM-MH-18-0132101"
+                    className="field flex-1 font-mono"
+                    style={{ minWidth: 220 }}
+                  />
+                )}
+              </div>
+            </div>
             <label className="block">
               <span className="field-label">Default lead time (days)</span>
               <input type="number" min={0} value={draft.defaultLeadTimeDays} onChange={(e) => set('defaultLeadTimeDays', e.target.value)} className="field" />
@@ -249,7 +355,7 @@ export default function AdminVendors() {
         <p className="mt-6 text-petroleum-300">No vendors yet.</p>
       ) : (
         <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="text-left font-mono text-[11px] uppercase tracking-eyebrow text-petroleum-300">
                 <th className="py-2">ID</th>
@@ -258,26 +364,73 @@ export default function AdminVendors() {
                 <th className="py-2">PIN</th>
                 <th className="py-2">City / State</th>
                 <th className="py-2">Country</th>
+                <th className="py-2">Linked products</th>
                 <th className="py-2">Active</th>
                 <th className="py-2"></th>
               </tr>
             </thead>
             <tbody>
-              {vendors.map((v) => (
-                <tr key={v.id} className="border-t border-paper-line">
-                  <td className="py-2 font-mono">{v.id}</td>
-                  <td className="py-2">{v.name}</td>
-                  <td className="py-2 text-petroleum-300">{vendorTypeLabel(v.type)}</td>
-                  <td className="py-2 font-mono text-petroleum">{v.postalCode ?? '—'}</td>
-                  <td className="py-2 text-petroleum-300">{[v.city, v.region].filter(Boolean).join(' · ') || '—'}</td>
-                  <td className="py-2 text-petroleum-300">{v.country ?? '—'}</td>
-                  <td className="py-2">{v.active ? 'Yes' : 'No'}</td>
-                  <td className="py-2 text-right whitespace-nowrap">
-                    <button onClick={() => { setError(''); setDraft(toDraft(v)); }} className="text-xs text-petroleum-300 underline hover:text-petroleum">Edit</button>
-                    <button onClick={() => remove(v)} className="ml-3 text-xs text-petroleum-300 underline hover:text-safety">Delete</button>
-                  </td>
-                </tr>
-              ))}
+              {vendors.map((v) => {
+                const links = linksByVendor.get(v.id) ?? [];
+                const isOpen = expanded.has(v.id);
+                return (
+                  <Fragment key={v.id}>
+                    <tr className="border-t border-paper-line">
+                      <td className="py-2 font-mono">{v.id}</td>
+                      <td className="py-2">{v.name}</td>
+                      <td className="py-2 text-petroleum-300">{vendorTypeLabel(v.type)}</td>
+                      <td className="py-2 font-mono text-petroleum">{v.postalCode ?? '—'}</td>
+                      <td className="py-2 text-petroleum-300">{[v.city, v.region].filter(Boolean).join(' · ') || '—'}</td>
+                      <td className="py-2 text-petroleum-300">{v.country ?? '—'}</td>
+                      <td className="py-2">
+                        {links.length === 0 ? (
+                          <span className="text-petroleum-300">— none —</span>
+                        ) : (
+                          <button
+                            onClick={() => toggleExpanded(v.id)}
+                            className="rounded-full bg-safety-200 px-2 py-0.5 text-xs font-medium text-safety-600 hover:bg-safety-200/70"
+                          >
+                            {links.length} item{links.length === 1 ? '' : 's'} {isOpen ? '▲' : '▼'}
+                          </button>
+                        )}
+                      </td>
+                      <td className="py-2">{v.active ? 'Yes' : 'No'}</td>
+                      <td className="py-2 text-right whitespace-nowrap">
+                        <button onClick={() => { setError(''); setDraft(toDraft(v)); }} className="text-xs text-petroleum-300 underline hover:text-petroleum">Edit</button>
+                        <button onClick={() => remove(v)} className="ml-3 text-xs text-petroleum-300 underline hover:text-safety">Delete</button>
+                      </td>
+                    </tr>
+                    {isOpen && links.length > 0 && (
+                      <tr className="border-t border-paper-line bg-paper-200/40">
+                        <td colSpan={9} className="py-2 pl-6 pr-2">
+                          <ul className="space-y-1">
+                            {links.map((o) => {
+                              const p = productByPart.get(o.itemPartNumber);
+                              return (
+                                <li key={o.id} className="flex flex-wrap items-center gap-2 text-xs">
+                                  <span className="font-mono text-safety-600">{o.itemPartNumber}</span>
+                                  {p?.slug ? (
+                                    <a href={`/product/${p.slug}/`} target="_blank" rel="noopener noreferrer" className="text-petroleum underline hover:text-safety-600">
+                                      {p.productName}
+                                    </a>
+                                  ) : (
+                                    <span className="text-petroleum-300">{p?.productName ?? '(product not found)'}</span>
+                                  )}
+                                  {o.isPreferred && <span className="eyebrow text-safety-600">preferred</span>}
+                                  <span className="text-petroleum-300">
+                                    {o.currency} {o.cost.toLocaleString()}
+                                    {o.leadTimeDays != null ? ` · ${o.leadTimeDays}d` : ''}
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
