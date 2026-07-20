@@ -125,9 +125,17 @@ export interface Vendor {
   address?: string;
   gstin?: string;
   pan?: string;
+  cin?: string;
   /** MSME (Udyam) registration status. */
   isMsme?: boolean;
   udyamNumber?: string;
+  /** Bank details for PO generation / payment. */
+  bankAccountHolder?: string;
+  bankName?: string;
+  bankBranch?: string;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankMicr?: string;
   contactName?: string;
   contactEmail?: string;
   phone?: string;

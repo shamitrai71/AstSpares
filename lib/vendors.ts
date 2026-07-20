@@ -44,8 +44,15 @@ export async function createVendor(
     address?: string;
     gstin?: string;
     pan?: string;
+    cin?: string;
     isMsme?: boolean;
     udyamNumber?: string;
+    bankAccountHolder?: string;
+    bankName?: string;
+    bankBranch?: string;
+    bankAccountNumber?: string;
+    bankIfsc?: string;
+    bankMicr?: string;
     contactName?: string;
     contactEmail?: string;
     phone?: string;
@@ -66,8 +73,15 @@ export async function createVendor(
     address: input.address?.trim() || undefined,
     gstin: input.gstin?.trim().toUpperCase() || undefined,
     pan: input.pan?.trim().toUpperCase() || undefined,
+    cin: input.cin?.trim().toUpperCase() || undefined,
     isMsme: input.isMsme,
     udyamNumber: input.isMsme ? input.udyamNumber?.trim().toUpperCase() || undefined : undefined,
+    bankAccountHolder: input.bankAccountHolder?.trim() || undefined,
+    bankName: input.bankName?.trim() || undefined,
+    bankBranch: input.bankBranch?.trim() || undefined,
+    bankAccountNumber: input.bankAccountNumber?.trim() || undefined,
+    bankIfsc: input.bankIfsc?.trim().toUpperCase() || undefined,
+    bankMicr: input.bankMicr?.trim() || undefined,
     contactName: input.contactName?.trim() || undefined,
     contactEmail: input.contactEmail?.trim() || undefined,
     phone: input.phone?.trim() || undefined,

@@ -20,8 +20,15 @@ type Draft = {
   address: string;
   gstin: string;
   pan: string;
+  cin: string;
   isMsme: boolean;
   udyamNumber: string;
+  bankAccountHolder: string;
+  bankName: string;
+  bankBranch: string;
+  bankAccountNumber: string;
+  bankIfsc: string;
+  bankMicr: string;
   contactName: string;
   contactEmail: string;
   phone: string;
@@ -40,8 +47,15 @@ const blank = (): Draft => ({
   address: '',
   gstin: '',
   pan: '',
+  cin: '',
   isMsme: false,
   udyamNumber: '',
+  bankAccountHolder: '',
+  bankName: '',
+  bankBranch: '',
+  bankAccountNumber: '',
+  bankIfsc: '',
+  bankMicr: '',
   contactName: '',
   contactEmail: '',
   phone: '',
@@ -61,8 +75,15 @@ const toDraft = (v: Vendor): Draft => ({
   address: v.address ?? '',
   gstin: v.gstin ?? '',
   pan: v.pan ?? '',
+  cin: v.cin ?? '',
   isMsme: v.isMsme ?? false,
   udyamNumber: v.udyamNumber ?? '',
+  bankAccountHolder: v.bankAccountHolder ?? '',
+  bankName: v.bankName ?? '',
+  bankBranch: v.bankBranch ?? '',
+  bankAccountNumber: v.bankAccountNumber ?? '',
+  bankIfsc: v.bankIfsc ?? '',
+  bankMicr: v.bankMicr ?? '',
   contactName: v.contactName ?? '',
   contactEmail: v.contactEmail ?? '',
   phone: v.phone ?? '',
@@ -140,8 +161,15 @@ export default function AdminVendors() {
           address: draft.address.trim() || undefined,
           gstin: draft.gstin.trim().toUpperCase() || undefined,
           pan: draft.pan.trim().toUpperCase() || undefined,
+          cin: draft.cin.trim().toUpperCase() || undefined,
           isMsme: draft.isMsme,
           udyamNumber: draft.isMsme ? (draft.udyamNumber.trim().toUpperCase() || undefined) : '',
+          bankAccountHolder: draft.bankAccountHolder.trim() || undefined,
+          bankName: draft.bankName.trim() || undefined,
+          bankBranch: draft.bankBranch.trim() || undefined,
+          bankAccountNumber: draft.bankAccountNumber.trim() || undefined,
+          bankIfsc: draft.bankIfsc.trim().toUpperCase() || undefined,
+          bankMicr: draft.bankMicr.trim() || undefined,
           contactName: draft.contactName.trim() || undefined,
           contactEmail: draft.contactEmail.trim() || undefined,
           phone: draft.phone.trim() || undefined,
@@ -161,8 +189,15 @@ export default function AdminVendors() {
             address: draft.address,
             gstin: draft.gstin,
             pan: draft.pan,
+            cin: draft.cin,
             isMsme: draft.isMsme,
             udyamNumber: draft.udyamNumber,
+            bankAccountHolder: draft.bankAccountHolder,
+            bankName: draft.bankName,
+            bankBranch: draft.bankBranch,
+            bankAccountNumber: draft.bankAccountNumber,
+            bankIfsc: draft.bankIfsc,
+            bankMicr: draft.bankMicr,
             contactName: draft.contactName,
             contactEmail: draft.contactEmail,
             phone: draft.phone,
@@ -283,6 +318,16 @@ export default function AdminVendors() {
                 <span className="mt-1 block text-xs text-safety-600">PAN is normally 10 characters</span>
               )}
             </label>
+            <label className="block">
+              <span className="field-label">CIN</span>
+              <input
+                value={draft.cin}
+                onChange={(e) => set('cin', e.target.value.toUpperCase())}
+                placeholder="e.g. U29100GJ2021PTC123116"
+                maxLength={21}
+                className="field font-mono"
+              />
+            </label>
             <div className="block sm:col-span-2">
               <span className="field-label">MSME (Udyam) registered?</span>
               <div className="mt-1 flex flex-wrap items-center gap-4">
@@ -326,6 +371,43 @@ export default function AdminVendors() {
               Active
             </label>
           </div>
+
+          <div>
+            <p className="field-label mb-2">Bank details (for Purchase Orders)</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="field-label">Account holder</span>
+                <input value={draft.bankAccountHolder} onChange={(e) => set('bankAccountHolder', e.target.value)} className="field" />
+              </label>
+              <label className="block">
+                <span className="field-label">Account number</span>
+                <input value={draft.bankAccountNumber} onChange={(e) => set('bankAccountNumber', e.target.value)} className="field font-mono" />
+              </label>
+              <label className="block">
+                <span className="field-label">Bank name</span>
+                <input value={draft.bankName} onChange={(e) => set('bankName', e.target.value)} placeholder="e.g. HDFC Bank Limited" className="field" />
+              </label>
+              <label className="block">
+                <span className="field-label">Branch</span>
+                <input value={draft.bankBranch} onChange={(e) => set('bankBranch', e.target.value)} placeholder="e.g. GIDC, Ankleshwar" className="field" />
+              </label>
+              <label className="block">
+                <span className="field-label">IFSC</span>
+                <input
+                  value={draft.bankIfsc}
+                  onChange={(e) => set('bankIfsc', e.target.value.toUpperCase())}
+                  placeholder="e.g. HDFC0002677"
+                  maxLength={11}
+                  className="field font-mono"
+                />
+              </label>
+              <label className="block">
+                <span className="field-label">MICR (optional)</span>
+                <input value={draft.bankMicr} onChange={(e) => set('bankMicr', e.target.value)} className="field font-mono" />
+              </label>
+            </div>
+          </div>
+
           <label className="block">
             <span className="field-label">Notes</span>
             <textarea rows={2} value={draft.notes} onChange={(e) => set('notes', e.target.value)} className="field resize-none" />
