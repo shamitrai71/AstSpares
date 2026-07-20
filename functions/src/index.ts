@@ -650,3 +650,40 @@ export const sendVendorEnquiry = onCall(
     return { ok: true };
   },
 );
+
+// ─────────────────────────────────────────────────────────────────────────
+// Vendor purchase order numbering.
+// Indian financial year (Apr–Mar), reset per FY, never reused within a FY —
+// same monotonic-counter discipline as every other minted number in this
+// app. Format: PSPL/AST/PO/<FY>/##### (display) — Firestore doc IDs can't
+// contain '/', so the stored id swaps them for '-'.
+// A poDate may be supplied so historical (backfilled) POs mint into the FY
+// they actually belong to, not the FY of the moment they're entered.
+// ─────────────────────────────────────────────────────────────────────────
+function financialYearFor(dateStr?: string): string {
+  const d = dateStr ? new Date(dateStr) : new Date();
+  const y = d.getFullYear();
+  const startYear = d.getMonth() >= 3 ? y : y - 1; // month is 0-indexed; April = 3
+  return `${startYear}-${String((startYear + 1) % 100).padStart(2, '0')}`;
+}
+
+export const mintVendorPoNumber = onCall({ region: 'asia-south1' }, async (request) => {
+  await requireAdmin(request.auth?.uid);
+  const poDate = typeof request.data?.poDate === 'string' ? request.data.poDate : undefined;
+  const fy = financialYearFor(poDate);
+
+  const db = admin.firestore();
+  const ref = db.doc(`counters/vendorPo-${fy}`);
+  const seq = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const current = snap.exists ? ((snap.data()?.seq as number) ?? 0) : 0;
+    const next = current + 1;
+    tx.set(ref, { seq: next, updatedAt: Date.now() }, { merge: true });
+    return next;
+  });
+
+  const padded = String(seq).padStart(5, '0');
+  const poNumber = `PSPL/AST/PO/${fy}/${padded}`;
+  const id = `PSPL-AST-PO-${fy}-${padded}`;
+  return { id, poNumber, financialYear: fy, seq };
+});

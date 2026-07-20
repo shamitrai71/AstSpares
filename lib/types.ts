@@ -176,6 +176,73 @@ export interface VendorOffering {
   updatedAt?: number;
 }
 
+// ── Vendor purchase orders (outbound, procurement — what WE issue to a
+//    vendor). Distinct from PurchaseOrder below, which is the buyer-facing
+//    PO a customer sends us. Numbered per Indian financial year, never
+//    reused (same discipline as every other minted id in this app). ────────
+
+export interface VendorPoLineItem {
+  /** Our AST part number, when the line is a catalogued item. */
+  partNumber?: string;
+  description: string;
+  hsn?: string;
+  quantity: number;
+  uom?: string;
+  unitPrice: number;
+  /** quantity × unitPrice, stored so historical lines never drift. */
+  amount: number;
+}
+
+export type VendorPoTaxMode = 'igst' | 'cgst_sgst' | 'none';
+
+export interface VendorPurchaseOrder {
+  /** PSPL-AST-PO-2026-27-00001 — also the Firestore doc ID (slash-free). */
+  id: string;
+  /** Display form, e.g. "PSPL/AST/PO/2026-27/00001". */
+  poNumber: string;
+  financialYear: string;
+  seq: number;
+  /** Set when this record backfills a PO that was issued outside the app
+   *  before this feature existed, e.g. "PSPL/AST/FD/PO/01". */
+  legacyPoNumber?: string;
+  origin: 'app' | 'backfilled';
+  /** ISO date (YYYY-MM-DD) — the actual issue date, which for a backfilled
+   *  record is the original date, not when it was entered. */
+  poDate: string;
+  vendorId: string;
+  vendorName: string;
+  /** Snapshot of vendor compliance details at time of issue. */
+  vendorGstin?: string;
+  vendorPan?: string;
+  vendorCin?: string;
+  vendorRef?: string;
+  vendorRefDate?: string;
+  currency: string;
+  lineItems: VendorPoLineItem[];
+  subtotal: number;
+  packingPct?: number;
+  packingAmount?: number;
+  taxableValue: number;
+  taxMode: VendorPoTaxMode;
+  taxPct?: number;
+  taxAmount?: number;
+  grandTotal: number;
+  freightTerms?: string;
+  paymentTerms?: string;
+  deliveryTerms?: string;
+  warrantyTerms?: string;
+  shipToLocationId?: string;
+  /** Denormalised label if shipToLocationId isn't set (custom address). */
+  shipToLabel?: string;
+  notes?: string;
+  status: PoStatus;
+  /** Links back to the vendor enquiry that justified this order, if any. */
+  enquiryId?: string;
+  createdBy?: string;
+  createdAt: number;
+  updatedAt?: number;
+}
+
 // ── Back-to-back vendor enquiries (internal; generated from a buyer RFQ) ──
 
 export type VendorEnquiryStatus = 'draft' | 'sent' | 'responded' | 'closed';

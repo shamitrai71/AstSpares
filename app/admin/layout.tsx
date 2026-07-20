@@ -25,6 +25,7 @@ const TABS = [
   { href: '/admin/products/', label: 'Products' },
   { href: '/admin/vendors/', label: 'Vendors' },
   { href: '/admin/inventory/', label: 'Inventory' },
+  { href: '/admin/vendor-pos/', label: 'Vendor POs' },
   { href: '/admin/landing/', label: 'Landing' },
 ];
 
