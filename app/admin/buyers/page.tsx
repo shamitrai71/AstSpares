@@ -83,7 +83,7 @@ export default function AdminBuyers() {
                 {b.uid ? null : <span className="eyebrow text-petroleum-300">no login</span>}
               </div>
               <p className="mt-0.5 truncate text-xs text-petroleum-300">
-                {b.id} · {b.email} · {b.companyName}{b.locationName ? ` / ${b.locationName}` : ''}
+                {b.id} · {b.email} · {b.companyName || '— no company —'}{b.locationName ? ` / ${b.locationName}` : ''}
                 {b.designation ? ` · ${b.designation}` : ''}
               </p>
             </div>
@@ -265,17 +265,27 @@ function BuyerEditor({ buyer, onClose, onSaved }: { buyer: Buyer; onClose: () =>
   const [department, setDepartment] = useState(buyer.department ?? '');
   const [phone, setPhone] = useState(buyer.phone ?? '');
   const [verified, setVerified] = useState(buyer.verified);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companyId, setCompanyId] = useState(buyer.companyId);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => { listCompanies().then(setCompanies).catch(() => setCompanies([])); }, []);
 
   const save = async () => {
     setBusy(true);
     try {
+      // '' means "no company" (explicit unlink) — send it as an empty string,
+      // not undefined, so it actually clears a previously-set company rather
+      // than leaving the stale value in Firestore (updateDoc only merges).
+      const company = companies.find((c) => c.id === companyId);
       await updateBuyer(buyer.id, {
         name: name.trim(),
         designation: designation.trim() || undefined,
         department: department.trim() || undefined,
         phone: phone.trim() || undefined,
         verified,
+        companyId: company ? company.id : '',
+        companyName: company ? company.name : '',
       });
       onSaved();
     } finally {
@@ -290,13 +300,25 @@ function BuyerEditor({ buyer, onClose, onSaved }: { buyer: Buyer; onClose: () =>
         <span className="font-mono text-xs text-petroleum-300">{buyer.id}</span>
       </div>
       <p className="mt-1 text-xs text-petroleum-300">
-        {buyer.companyName}{buyer.locationName ? ` / ${buyer.locationName}` : ''} · {buyer.country ?? '—'} · {buyer.channel}
+        {buyer.companyName || '— no company —'}{buyer.locationName ? ` / ${buyer.locationName}` : ''} · {buyer.country ?? '—'} · {buyer.channel}
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="field-label">Name</span>
           <input value={name} onChange={(e) => setName(e.target.value)} className="field" />
+        </label>
+        <label className="block">
+          <span className="field-label">Company</span>
+          <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="field">
+            <option value="">— No company (unlink) —</option>
+            {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          {companyId === '' && (
+            <span className="mt-1 block text-xs text-safety-600">
+              Unlinked — this buyer won't be attributable to a company until relinked.
+            </span>
+          )}
         </label>
         <label className="block">
           <span className="field-label">Phone</span>

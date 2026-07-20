@@ -12,10 +12,11 @@ import {
   deleteVendorPo,
   computeTotals,
   lineAmount,
-  defaultTaxMode,
+  guessTaxMode,
   VENDOR_PO_DEFAULT_CURRENCY,
   BUYER_STATE,
 } from '@/lib/vendorPos';
+import type { TaxModeGuess } from '@/lib/vendorPos';
 import { CURRENCIES } from '@/lib/currencies';
 import type {
   Vendor,
@@ -167,6 +168,7 @@ function PoCreator({
   const [lines, setLines] = useState<LineDraft[]>([blankLine()]);
   const [packingPct, setPackingPct] = useState('0');
   const [taxMode, setTaxMode] = useState<VendorPoTaxMode>('igst');
+  const [taxGuess, setTaxGuess] = useState<TaxModeGuess | null>(null);
   const [taxPct, setTaxPct] = useState('18');
   const [freightTerms, setFreightTerms] = useState('At actual, to Buyer\u2019s account.');
   const [paymentTerms, setPaymentTerms] = useState('100% against Proforma Invoice, post PO acknowledgement.');
@@ -183,7 +185,9 @@ function PoCreator({
   const pickVendor = (id: string) => {
     setVendorId(id);
     const v = vendors.find((x) => x.id === id);
-    setTaxMode(defaultTaxMode(v?.region));
+    const guess = guessTaxMode(v?.gstin, v?.region);
+    setTaxMode(guess.mode);
+    setTaxGuess(guess);
     if (v?.defaultLeadTimeDays != null && !deliveryTerms) {
       setDeliveryTerms(`Within ${v.defaultLeadTimeDays} days from release of this PO and its acknowledgement.`);
     }
@@ -301,7 +305,7 @@ function PoCreator({
           <p className="text-xs text-petroleum-300 sm:col-span-2">
             {vendor.gstin ? `GSTIN ${vendor.gstin}` : 'No GSTIN on file'}
             {vendor.pan ? ` · PAN ${vendor.pan}` : ''}
-            {vendor.region ? ` · ${vendor.region}` : ' · no state on file — tax mode defaults to IGST'}
+            {vendor.region ? ` · ${vendor.region}` : ''}
             {!vendor.bankAccountNumber && ' · no bank details on file'}
           </p>
         )}
@@ -370,6 +374,15 @@ function PoCreator({
             <option value="cgst_sgst">CGST + SGST (intra-state, {BUYER_STATE})</option>
             <option value="none">None</option>
           </select>
+          {taxGuess && taxMode === taxGuess.mode && (
+            <span className="mt-1 block text-xs text-petroleum-300">
+              {taxGuess.source === 'gstin' && `Auto-detected from GSTIN (${taxGuess.vendorStateName} \u2192 ${BUYER_STATE}).`}
+              {taxGuess.source === 'region' && `Based on vendor state on file (${taxGuess.vendorStateName}) \u2014 no GSTIN to confirm against.`}
+              {taxGuess.source === 'default' && (
+                <span className="text-safety-600">Vendor has no GSTIN or state on file \u2014 defaulting to IGST, please confirm.</span>
+              )}
+            </span>
+          )}
         </label>
         <label className="block">
           <span className="field-label">Tax %</span>

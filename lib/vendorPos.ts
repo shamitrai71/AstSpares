@@ -13,12 +13,14 @@ import {
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from './firebase';
+import { stateCodeFromGstin, stateCodeFromName, stateNameForCode } from './gst-states';
 import type { VendorPoLineItem, VendorPoTaxMode, VendorPurchaseOrder, PoStatus } from './types';
 
 export const VENDOR_PO_DEFAULT_CURRENCY = 'INR';
 /** Petrodek's own state — used to default IGST vs CGST+SGST against the
- *  vendor's region. Editable per PO; this is only a starting default. */
+ *  vendor's state. Editable per PO; this is only a starting default. */
 export const BUYER_STATE = 'Maharashtra';
+export const BUYER_STATE_CODE = '27';
 
 function clean<T extends Record<string, unknown>>(o: T): T {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
@@ -45,10 +47,37 @@ export function computeTotals(input: {
   return { subtotal, packingAmount, taxableValue, taxAmount, grandTotal };
 }
 
-/** Default tax mode from a simple state comparison. Always editable. */
-export function defaultTaxMode(vendorRegion?: string): VendorPoTaxMode {
-  if (!vendorRegion) return 'igst';
-  return vendorRegion.trim().toLowerCase() === BUYER_STATE.toLowerCase() ? 'cgst_sgst' : 'igst';
+export type TaxModeSource = 'gstin' | 'region' | 'default';
+
+export type TaxModeGuess = {
+  mode: VendorPoTaxMode;
+  source: TaxModeSource;
+  vendorStateName?: string;
+};
+
+/** Determines IGST vs CGST+SGST. Prefers the vendor's GSTIN state code (the
+ *  authoritative source — matches what tax authorities use); falls back to
+ *  a free-text region/state-name match when no GSTIN is on file; falls back
+ *  to IGST with source 'default' (needs manual confirmation) when neither is
+ *  available. Always just a starting default — editable per PO. */
+export function guessTaxMode(vendorGstin?: string, vendorRegion?: string): TaxModeGuess {
+  const gstinCode = stateCodeFromGstin(vendorGstin);
+  if (gstinCode) {
+    return {
+      mode: gstinCode === BUYER_STATE_CODE ? 'cgst_sgst' : 'igst',
+      source: 'gstin',
+      vendorStateName: stateNameForCode(gstinCode),
+    };
+  }
+  const regionCode = stateCodeFromName(vendorRegion);
+  if (regionCode) {
+    return {
+      mode: regionCode === BUYER_STATE_CODE ? 'cgst_sgst' : 'igst',
+      source: 'region',
+      vendorStateName: stateNameForCode(regionCode),
+    };
+  }
+  return { mode: 'igst', source: 'default' };
 }
 
 export async function listVendorPos(): Promise<VendorPurchaseOrder[]> {
