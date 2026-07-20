@@ -60,6 +60,7 @@ const blankProduct = (): ProductDoc => ({
   categoryId: '',
   family: '',
   manufacturer: '',
+  hsn: '',
   description: '',
   features: [],
   specs: [],
@@ -98,6 +99,7 @@ function cleanFields(p: ProductDoc) {
     cataloguePdfUrl: (p.cataloguePdfUrl ?? '').trim(),
     countryOfOrigin: (p.countryOfOrigin ?? '').trim(),
     fulfilledBy: (p.fulfilledBy ?? '').trim(),
+    hsn: (p.hsn ?? '').trim(),
   };
 }
 
@@ -402,6 +404,18 @@ export default function AdminProducts() {
                 {UOM_OPTIONS.map((u) => <option key={u.code} value={u.code}>{u.label}</option>)}
               </datalist>
             </label>
+            <label className="block">
+              <span className="field-label">HSN / SAC code</span>
+              <input
+                value={p.hsn ?? ''}
+                onChange={(e) => setField('hsn', e.target.value)}
+                placeholder="e.g. 84818049"
+                className="field font-mono"
+              />
+              <span className="mt-1 block text-xs text-petroleum-300">
+                Default for this item. A vendor with a different classification can override it under Sourcing below.
+              </span>
+            </label>
             <div className="flex items-end gap-4">
               <label className="flex items-center gap-2 text-sm text-petroleum">
                 <input type="checkbox" checked={p.inStock} onChange={(e) => setField('inStock', e.target.checked)} className="accent-safety" disabled={p.status === 'Archived'} />
@@ -486,7 +500,7 @@ export default function AdminProducts() {
               Save this {draft.spareParent ? 'spare' : 'item'} first, then re-open it to add vendor sourcing.
             </p>
           ) : (
-            <SourcingPanel itemPartNumber={p.partNumber} />
+            <SourcingPanel itemPartNumber={p.partNumber} defaultHsn={p.hsn} />
           )}
 
           {error && <p className="text-sm text-safety-600">{error}</p>}

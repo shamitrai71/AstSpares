@@ -129,6 +129,7 @@ export async function createOffering(input: {
   vendorId: string;
   vendorName: string;
   vendorPartNo?: string;
+  hsn?: string;
   cost: number;
   currency: string;
   leadTimeDays?: number;
@@ -144,6 +145,7 @@ export async function createOffering(input: {
       vendorId: input.vendorId,
       vendorName: input.vendorName,
       vendorPartNo: input.vendorPartNo?.trim() || undefined,
+      hsn: input.hsn?.trim() || undefined,
       cost: input.cost,
       currency: input.currency,
       leadTimeDays: input.leadTimeDays,

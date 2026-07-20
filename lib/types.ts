@@ -52,6 +52,8 @@ export interface ProductDoc {
   /** Denormalised top-level family code for badges/prefix (e.g. "RS"). */
   family: ProductFamily;
   manufacturer?: string;  // internal vendor; stripped from the public export
+  /** Default HSN/SAC code for GST classification — overridable per vendor offering. */
+  hsn?: string;
   description: string;
   features: string[];
   specs: SpecRow[];
@@ -157,6 +159,9 @@ export interface VendorOffering {
   /** Denormalised for display. */
   vendorName: string;
   vendorPartNo?: string;
+  /** Overrides the product's default HSN when this vendor classifies it
+   *  differently. Falls back to the product's hsn when unset. */
+  hsn?: string;
   cost: number;
   /** ISO 4217, per offering (vendors may quote in different currencies). */
   currency: string;

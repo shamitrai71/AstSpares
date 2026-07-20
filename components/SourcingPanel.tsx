@@ -16,6 +16,7 @@ type Form = {
   id?: string;
   vendorId: string;
   vendorPartNo: string;
+  hsn: string;
   cost: string;
   currency: string;
   leadTimeDays: string;
@@ -26,7 +27,7 @@ type Form = {
 
 const num = (s: string): number | undefined => (s.trim() === '' ? undefined : Number(s));
 
-export function SourcingPanel({ itemPartNumber }: { itemPartNumber: string }) {
+export function SourcingPanel({ itemPartNumber, defaultHsn }: { itemPartNumber: string; defaultHsn?: string }) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [offerings, setOfferings] = useState<VendorOffering[] | null>(null);
   const [form, setForm] = useState<Form | null>(null);
@@ -40,12 +41,13 @@ export function SourcingPanel({ itemPartNumber }: { itemPartNumber: string }) {
   }, [itemPartNumber]);
 
   const startAdd = () =>
-    setForm({ vendorId: vendors[0]?.id ?? '', vendorPartNo: '', cost: '', currency: DEFAULT_CURRENCY, leadTimeDays: '', moq: '', stockQty: '', notes: '' });
+    setForm({ vendorId: vendors[0]?.id ?? '', vendorPartNo: '', hsn: defaultHsn ?? '', cost: '', currency: DEFAULT_CURRENCY, leadTimeDays: '', moq: '', stockQty: '', notes: '' });
   const startEdit = (o: VendorOffering) =>
     setForm({
       id: o.id,
       vendorId: o.vendorId,
       vendorPartNo: o.vendorPartNo ?? '',
+      hsn: o.hsn ?? defaultHsn ?? '',
       cost: String(o.cost),
       currency: o.currency,
       leadTimeDays: o.leadTimeDays != null ? String(o.leadTimeDays) : '',
@@ -66,6 +68,7 @@ export function SourcingPanel({ itemPartNumber }: { itemPartNumber: string }) {
           vendorId: form.vendorId,
           vendorName,
           vendorPartNo: form.vendorPartNo.trim() || undefined,
+          hsn: form.hsn.trim() || undefined,
           cost: Number(form.cost),
           currency: form.currency,
           leadTimeDays: num(form.leadTimeDays),
@@ -79,6 +82,7 @@ export function SourcingPanel({ itemPartNumber }: { itemPartNumber: string }) {
           vendorId: form.vendorId,
           vendorName,
           vendorPartNo: form.vendorPartNo,
+          hsn: form.hsn,
           cost: Number(form.cost),
           currency: form.currency,
           leadTimeDays: num(form.leadTimeDays),
@@ -127,6 +131,11 @@ export function SourcingPanel({ itemPartNumber }: { itemPartNumber: string }) {
                 </button>
                 <span className="ml-2 font-medium">{o.vendorName}</span>
                 {o.vendorPartNo && <span className="ml-2 font-mono text-xs text-petroleum-300">{o.vendorPartNo}</span>}
+                {o.hsn && o.hsn !== defaultHsn && (
+                  <span className="ml-2 rounded-full bg-safety-200 px-1.5 py-0.5 font-mono text-[11px] text-safety-600" title="HSN differs from this item's default">
+                    HSN {o.hsn}
+                  </span>
+                )}
                 <span className="ml-2 text-petroleum-300">
                   · {o.currency} {o.cost.toLocaleString()}
                   {o.leadTimeDays != null && ` · ${o.leadTimeDays}d`}
@@ -157,6 +166,15 @@ export function SourcingPanel({ itemPartNumber }: { itemPartNumber: string }) {
             <label className="block">
               <span className="field-label">Vendor part no.</span>
               <input value={form.vendorPartNo} onChange={(e) => set('vendorPartNo', e.target.value)} className="field font-mono text-xs" />
+            </label>
+            <label className="block">
+              <span className="field-label">HSN {defaultHsn ? '(overrides item default)' : ''}</span>
+              <input
+                value={form.hsn}
+                onChange={(e) => set('hsn', e.target.value)}
+                placeholder={defaultHsn || 'e.g. 84818049'}
+                className="field font-mono text-xs"
+              />
             </label>
             <label className="block">
               <span className="field-label">Cost *</span>
