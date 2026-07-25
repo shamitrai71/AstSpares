@@ -114,9 +114,12 @@ export function getProductByPartNumber(partNumber: string): ProductDoc | undefin
 }
 
 /** Parts (equipment AND spares) directly in a category OR any descendant. */
+/** Active EQUIPMENT (not spares) directly in a category OR any descendant —
+ *  the category grid always browses equipment only. A spare is reachable via
+ *  the link on its parent's own page, or an exact-match search elsewhere. */
 export function getProductsInCategory(categoryId: string): ProductDoc[] {
   const ids = new Set([categoryId, ...getDescendantIds(categoryId)]);
-  return getAllProducts().filter((p) => ids.has(p.categoryId));
+  return getEquipment().filter((p) => ids.has(p.categoryId));
 }
 
 export function getProduct(slug: string): ProductDoc | undefined {

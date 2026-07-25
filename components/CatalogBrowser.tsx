@@ -64,17 +64,20 @@ export function CatalogBrowser({
     return products.filter((p) => {
       if (catSet && !catSet.has(p.categoryId)) return false;
       if (inStockOnly && !p.inStock) return false;
-      if (!term) return true;
       // Spares are already discoverable via a link on their parent product's
-      // page. Surfacing them in a broad/stem search too — alongside the
-      // parent and other equipment — reads as confusing duplication, so a
-      // spare only matches when the search is an exact hit on its own part
-      // number or name (i.e. specifically searched for), not a stem/partial.
+      // page. Surfacing them in category browsing or a broad/stem search too
+      // — alongside the parent and other equipment — reads as confusing
+      // duplication, so a spare only ever appears when the search is an
+      // exact hit on its own part number or name (specifically searched
+      // for); an empty term (plain category/stock browsing) always excludes
+      // them, regardless of category match.
       if (p.kind === 'spare') {
+        if (!term) return false;
         const pn = p.partNumber.toLowerCase();
         const name = p.productName.toLowerCase();
         return term === pn || term === name;
       }
+      if (!term) return true;
       const haystack = [
         p.partNumber,
         p.productName,
