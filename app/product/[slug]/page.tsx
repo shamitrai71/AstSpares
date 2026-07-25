@@ -192,7 +192,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       </div>
 
       {spares.length > 0 && (
-        <section className="mt-14">
+        <section id="spares" className="mt-14 scroll-mt-24">
           <h2 className="mb-4 font-display text-2xl">Spares &amp; components</h2>
           <p className="mb-5 max-w-2xl text-sm text-petroleum-300">
             Individual bill-of-materials parts for this assembly. Add any to your RFQ for a quote and lead time.
