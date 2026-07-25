@@ -5,6 +5,17 @@ import { getSiteConfigDoc, upsertSiteConfig } from '@/lib/db';
 import { SITE_DEFAULTS } from '@/lib/site';
 import type { FooterColumn, SiteConfig } from '@/lib/types';
 
+/** Only internal paths need the leading/trailing slash (matches trailingSlash:
+ *  true); external/mailto/tel links have their own natural format. */
+function hrefWarning(href: string): string | undefined {
+  const h = href.trim();
+  if (!h) return undefined;
+  if (/^(https?:|mailto:|tel:)/i.test(h)) return undefined;
+  if (!h.startsWith('/')) return 'Internal links should start with /';
+  if (!h.endsWith('/')) return 'Internal links should end with /';
+  return undefined;
+}
+
 export default function AdminLanding() {
   const [config, setConfig] = useState<SiteConfig | null>(null);
   const [busy, setBusy] = useState(false);
@@ -23,6 +34,7 @@ export default function AdminLanding() {
   };
 
   const setColumns = (footerColumns: FooterColumn[]) => set('footerColumns', footerColumns);
+
 
   const save = async () => {
     if (!config) return;
@@ -131,40 +143,45 @@ export default function AdminLanding() {
             </div>
             <div className="mt-3 space-y-2">
               {col.links.map((l, li) => (
-                <div key={li} className="flex gap-2">
-                  <input
-                    value={l.label}
-                    placeholder="Label"
-                    onChange={(e) =>
-                      setColumns(
-                        config.footerColumns.map((c, i) =>
-                          i === ci ? { ...c, links: c.links.map((x, j) => (j === li ? { ...x, label: e.target.value } : x)) } : c,
-                        ),
-                      )
-                    }
-                    className="field w-2/5"
-                  />
-                  <input
-                    value={l.href}
-                    placeholder="/products/ or https://…"
-                    onChange={(e) =>
-                      setColumns(
-                        config.footerColumns.map((c, i) =>
-                          i === ci ? { ...c, links: c.links.map((x, j) => (j === li ? { ...x, href: e.target.value } : x)) } : c,
-                        ),
-                      )
-                    }
-                    className="field flex-1 font-mono text-xs"
-                  />
-                  <button
-                    onClick={() =>
-                      setColumns(config.footerColumns.map((c, i) => (i === ci ? { ...c, links: c.links.filter((_, j) => j !== li) } : c)))
-                    }
-                    className="btn-ghost px-3"
-                    aria-label="Remove link"
-                  >
-                    ×
-                  </button>
+                <div key={li} className="flex-1">
+                  <div className="flex gap-2">
+                    <input
+                      value={l.label}
+                      placeholder="Label"
+                      onChange={(e) =>
+                        setColumns(
+                          config.footerColumns.map((c, i) =>
+                            i === ci ? { ...c, links: c.links.map((x, j) => (j === li ? { ...x, label: e.target.value } : x)) } : c,
+                          ),
+                        )
+                      }
+                      className="field w-2/5"
+                    />
+                    <input
+                      value={l.href}
+                      placeholder="/products/ or https://…"
+                      onChange={(e) =>
+                        setColumns(
+                          config.footerColumns.map((c, i) =>
+                            i === ci ? { ...c, links: c.links.map((x, j) => (j === li ? { ...x, href: e.target.value } : x)) } : c,
+                          ),
+                        )
+                      }
+                      className="field flex-1 font-mono text-xs"
+                    />
+                    <button
+                      onClick={() =>
+                        setColumns(config.footerColumns.map((c, i) => (i === ci ? { ...c, links: c.links.filter((_, j) => j !== li) } : c)))
+                      }
+                      className="btn-ghost px-3"
+                      aria-label="Remove link"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  {hrefWarning(l.href) && (
+                    <p className="mt-1 pl-[42%] text-xs text-safety-600">{hrefWarning(l.href)}</p>
+                  )}
                 </div>
               ))}
               <button
