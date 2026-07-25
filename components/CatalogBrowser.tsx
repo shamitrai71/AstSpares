@@ -65,6 +65,16 @@ export function CatalogBrowser({
       if (catSet && !catSet.has(p.categoryId)) return false;
       if (inStockOnly && !p.inStock) return false;
       if (!term) return true;
+      // Spares are already discoverable via a link on their parent product's
+      // page. Surfacing them in a broad/stem search too — alongside the
+      // parent and other equipment — reads as confusing duplication, so a
+      // spare only matches when the search is an exact hit on its own part
+      // number or name (i.e. specifically searched for), not a stem/partial.
+      if (p.kind === 'spare') {
+        const pn = p.partNumber.toLowerCase();
+        const name = p.productName.toLowerCase();
+        return term === pn || term === name;
+      }
       const haystack = [
         p.partNumber,
         p.productName,

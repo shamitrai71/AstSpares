@@ -132,7 +132,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           {product.kind === 'spare' && parent && (
             <p className="mt-2 text-sm text-petroleum-300">
               Spare / component of{' '}
-              <Link href={`/product/${parent.slug}`} className="text-safety-600 underline">
+              <Link href={`/product/${parent.slug}/`} className="text-safety-600 underline">
                 {parent.partNumber} — {parent.productName}
               </Link>
             </p>
@@ -200,7 +200,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           <div className="divide-y divide-paper-line border-y border-paper-line">
             {spares.map((s) => (
               <div key={s.partNumber} className="flex flex-wrap items-center justify-between gap-3 py-4">
-                <Link href={`/product/${s.slug}`} className="group min-w-0">
+                <Link href={`/product/${s.slug}/`} className="group min-w-0">
                   <span className="font-mono text-xs text-safety-600">{s.partNumber}</span>
                   <span className="ml-3 text-petroleum group-hover:underline">{s.productName}</span>
                   {s.uom && <span className="ml-2 font-mono text-xs text-petroleum-300">/ {s.uom}</span>}
