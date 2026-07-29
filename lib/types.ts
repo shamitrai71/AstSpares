@@ -100,14 +100,14 @@ export interface Inventory {
 export type Channel = 'online' | 'offline';
 
 export type CompanyType =
-  | 'refinery'
-  | 'epc'
-  | 'terminal'
-  | 'port'
-  | 'trader'
-  | 'agent'
-  | 'inspection'
-  | 'consultant'
+  | 'process-industries'            // was 'refinery'  — master L1 slug
+  | 'engineering-and-construction'  // was 'epc'
+  | 'storage-terminals'             // was 'terminal'
+  | 'logistics-and-transportation'  // was 'port'
+  | 'asset-integrity-and-inspection'// was 'inspection'
+  | 'professional-services'         // was 'consultant'
+  | 'trader'                        // local — commercial role, no master L1
+  | 'agent'                         // local — commercial role, no master L1
   | 'other';
 
 // ── Vendors & sourcing (backend-only; never exported to the public catalog) ──
