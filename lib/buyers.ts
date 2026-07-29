@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from './firebase';
+import { normalizeCompanyType } from './company';
 import type { Buyer, Company, CompanyLocation, CompanyType } from './types';
 
 /** Firestore rejects `undefined` field values — drop them before writing. */
@@ -155,6 +156,23 @@ export async function updateCompany(
   patch: Partial<Pick<Company, 'name' | 'type' | 'country' | 'defaultCurrency' | 'verified'>>,
 ): Promise<void> {
   await updateDoc(doc(db, 'companies', id), clean({ ...patch, updatedAt: Date.now() }));
+}
+
+/** One-shot migration: remap any company whose stored `type` is a legacy code
+ *  (refinery/epc/terminal/port/inspection/consultant) to its master L1 slug.
+ *  Idempotent and safe to re-run — companies already on a master slug, or on the
+ *  local codes (trader/agent/other), or with no type, are left untouched. */
+export async function migrateCompanyTypes(): Promise<{ scanned: number; migrated: number }> {
+  const companies = await listCompanies();
+  let migrated = 0;
+  for (const c of companies) {
+    const next = normalizeCompanyType(c.type);
+    if (next && next !== c.type) {
+      await updateCompany(c.id, { type: next as CompanyType });
+      migrated++;
+    }
+  }
+  return { scanned: companies.length, migrated };
 }
 
 export async function deleteCompany(id: string): Promise<void> {

@@ -26,6 +26,12 @@ export interface Category {
   /** Top-level only: the AST part-number family code (e.g. "RS"). Inherited by
    *  descendants for display/prefix purposes. */
   code?: string;
+  /** Top-level only: the corresponding master equipment-category slug — the
+   *  explicit cross-app join key to the Tankonomics hub. The parts taxonomy stays
+   *  local (and goes deeper than the master leaf); this declares the correspondence
+   *  outright instead of relying on slug string-matching, which would drift
+   *  (e.g. local "flame-arrestors" vs master "flame-arresters"). */
+  masterCategorySlug?: string;
   /** Sort order among siblings. */
   order: number;
   updatedAt?: number;
