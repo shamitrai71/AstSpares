@@ -106,9 +106,10 @@ export interface Inventory {
 export type Channel = 'online' | 'offline';
 
 export type CompanyType =
-  | 'process-industries'            // was 'refinery'  — master L1 slug
-  | 'engineering-and-construction'  // was 'epc'
   | 'storage-terminals'             // was 'terminal'
+  | 'process-industries'            // was 'refinery'  — master L1 slug
+  | 'natural-resources-and-upstream'// upstream E&P (e.g. ONGC) — no old code
+  | 'engineering-and-construction'  // was 'epc'
   | 'logistics-and-transportation'  // was 'port'
   | 'asset-integrity-and-inspection'// was 'inspection'
   | 'professional-services'         // was 'consultant'

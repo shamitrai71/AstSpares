@@ -5,15 +5,16 @@ import type { CompanyType } from './types';
  *  ASTSPARES-friendly. `trader`/`agent` are local codes — commercial roles with
  *  no master L1 home (that distinction lives in VendorType). */
 export const COMPANY_TYPE_OPTIONS: { code: CompanyType; label: string }[] = [
-  { code: 'process-industries', label: 'Refinery / Petchem' },
-  { code: 'engineering-and-construction', label: 'EPC Contractor' },
-  { code: 'storage-terminals', label: 'Tank Terminal' },
-  { code: 'logistics-and-transportation', label: 'Port' },
+  { code: 'storage-terminals', label: 'Storage Terminals' },
+  { code: 'process-industries', label: 'Process Industries' },
+  { code: 'natural-resources-and-upstream', label: 'Natural Resources & Upstream' },
+  { code: 'engineering-and-construction', label: 'Engineering & Construction' },
+  { code: 'logistics-and-transportation', label: 'Logistics & Transportation' },
+  { code: 'asset-integrity-and-inspection', label: 'Asset Integrity & Inspection' },
+  { code: 'professional-services', label: 'Professional Services' },
   { code: 'trader', label: 'Trader' },
   { code: 'agent', label: 'Agent' },
-  { code: 'asset-integrity-and-inspection', label: 'Inspection / TPI' },
-  { code: 'professional-services', label: 'Consultant' },
-  { code: 'other', label: 'Others' },
+  { code: 'other', label: 'Other' },
 ];
 
 export const DEFAULT_COMPANY_TYPE: CompanyType = 'process-industries';
