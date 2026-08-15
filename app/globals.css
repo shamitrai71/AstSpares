@@ -8,7 +8,7 @@
 
 @layer base {
   body {
-    @apply bg-paper text-petroleum-ink font-sans antialiased;
+    @apply bg-paper text-petroleum-ink font-sans antialiased overflow-x-hidden;
     background-image:
       /* faint engineering-paper grid, well below the noise floor */
       linear-gradient(to right, rgba(14, 28, 36, 0.025) 1px, transparent 1px),

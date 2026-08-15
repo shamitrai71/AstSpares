@@ -26,11 +26,11 @@ export function Header({ nav = [] }: { nav?: NavItem[] }) {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-paper-line bg-paper/85 backdrop-blur">
-        <div className="shell flex h-16 items-center gap-4">
-          <Link href="/home/" className="flex items-center gap-2">
+        <div className="shell flex h-16 items-center gap-2 sm:gap-4">
+          <Link href="/home/" className="flex min-w-0 shrink items-center gap-2">
             <img src="/brand-icon.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0" />
-            <span className="font-display text-2xl leading-none text-petroleum">ASTSPARES</span>
-            <span className="hidden font-mono text-[10px] uppercase tracking-eyebrow text-safety sm:inline">
+            <span className="truncate font-display text-lg leading-none text-petroleum sm:text-2xl">ASTSPARES</span>
+            <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-eyebrow text-safety sm:inline">
               tank &amp; terminal spares
             </span>
           </Link>
@@ -38,7 +38,7 @@ export function Header({ nav = [] }: { nav?: NavItem[] }) {
           <Link
             href="/"
             aria-label="View the network globe"
-            className="-ml-1 flex h-8 w-8 items-center justify-center rounded-full text-petroleum-300 transition-colors hover:text-safety lg:hidden"
+            className="-ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-petroleum-300 transition-colors hover:text-safety lg:hidden"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="9" />
@@ -47,7 +47,7 @@ export function Header({ nav = [] }: { nav?: NavItem[] }) {
             </svg>
           </Link>
 
-          <div className="ml-auto hidden items-center gap-1 lg:flex">
+          <div className="ml-auto hidden shrink-0 items-center gap-1 lg:flex">
             {nav.map((n) => (
               <Link
                 key={n.href}
@@ -59,7 +59,7 @@ export function Header({ nav = [] }: { nav?: NavItem[] }) {
             ))}
           </div>
 
-          <div className="ml-auto flex items-center gap-2 lg:ml-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 lg:ml-2">
             <div className="hidden items-center sm:flex">
               <input
                 value={q}
@@ -76,12 +76,12 @@ export function Header({ nav = [] }: { nav?: NavItem[] }) {
 
             <Link
               href="/account/"
-              className="rounded-tag px-3 py-2 text-sm text-petroleum-300 transition-colors hover:text-petroleum"
+              className="whitespace-nowrap rounded-tag px-2 py-2 text-sm text-petroleum-300 transition-colors hover:text-petroleum sm:px-3"
             >
               {user ? 'Account' : 'Sign in'}
             </Link>
 
-            <button onClick={openDrawer} className="btn-primary relative">
+            <button onClick={openDrawer} className="btn-primary relative shrink-0 px-3 py-2 sm:px-4 sm:py-2.5">
               RFQ
               <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-paper px-1.5 font-mono text-[11px] text-safety">
                 {count}
