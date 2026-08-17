@@ -66,22 +66,22 @@ export default function NetworkGlobe({
             zIndex: 30,
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 8,
-            padding: '13px 30px',
+            gap: 6,
+            padding: '10px 22px',
             borderRadius: 999,
             background: '#D65210',
             color: '#F4EEE3',
             fontFamily: 'ui-sans-serif,system-ui',
             fontWeight: 600,
-            fontSize: 14,
-            letterSpacing: '.1em',
+            fontSize: 13,
+            letterSpacing: '.08em',
             textTransform: 'uppercase',
             textDecoration: 'none',
-            boxShadow: '0 8px 24px rgba(0,0,0,.4)',
+            boxShadow: '0 6px 18px rgba(0,0,0,.35)',
           }}
         >
           {cta.label}
-          <span aria-hidden style={{ fontSize: 16, lineHeight: 1 }}>→</span>
+          <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>→</span>
         </Link>
       )}
     </>
